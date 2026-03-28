@@ -1,0 +1,19 @@
+<div id='userheader'> 
+
+<div id="logo">
+	<a href="/"><img src="{{ url_for('static', filename='guriang-small.png') }}" alt="Guriang-HPC ver. 2.0"></a>
+</div>
+<nav>
+		<a href='/tools' class='hidea'>
+			<span class='sitem'>tool</span>
+		</a>
+		<a href='/help' class='hidea' target='_blank'>
+			<span class='sitem'>help</span>
+		</a>
+</nav>
+
+{% if session['username'] %}
+<a href='/logout'><button id='logbutton'>logout</button></a>
+{% endif %}
+
+</div>

@@ -1,0 +1,236 @@
+// javascript tools
+// (c) rosandi, 2020
+
+
+function getJSON(surl, func) {
+    var request = new XMLHttpRequest();
+    request.open('GET', surl, true);
+
+    request.onload = function() {
+        if (this.status >= 200 && this.status < 400) {
+            // console.log(this.response);
+            var data = JSON.parse(this.response);
+            func(data);
+        } else {
+            console.log("not found "+surl);
+        }
+    }
+
+    request.send();
+}
+
+function postJSON(surl, data, func) {
+    var request = new XMLHttpRequest();
+    request.open('POST', surl, true);
+    request.setRequestHeader('Content-type', 'application/json');
+    
+    request.onload = function() {
+        if (this.status >= 200 && this.status < 400) {
+            console.log(this.response);
+            var data = JSON.parse(this.response);
+            func(data);
+        } else {
+            console.log("not found "+surl);
+        }
+    }
+    
+    request.send(JSON.stringify(data));
+}
+
+function postObject(url,obj,func) {
+    var req = new XMLHttpRequest();
+    
+    req.onload=function() {
+        var data=JSON.parse(this.response);
+        func(data);
+    }
+
+    var fdata = new FormData();
+    for(const key in obj) {fdata.append(key, obj[key]);}
+    req.open("POST", url, true);
+    req.send(fdata);
+}
+
+function getText(surl, func) {
+    var request = new XMLHttpRequest();
+    request.open('GET', surl, true);
+
+    request.onload = function() {
+        if (this.status >= 200 && this.status < 400) {
+            var data=this.response;
+            func(data);
+        } else {
+            console.log("not found "+surl);
+        }
+    }
+
+    request.send();
+}
+
+function getval(elid) {
+    return document.getElementById(elid).value;
+}
+
+function setval(elid,val) {
+    document.getElementById(elid).value=val;
+}
+
+function checked(elid) {
+    return document.getElementById(elid).checked;
+}
+
+function setText(id, text) {
+    document.getElementById(id).innerHTML=text;
+}
+
+function appendtext(id, text) {
+    document.getElementById(id).innerHTML+=text;
+}
+
+function getContent(id) {
+    return document.getElementById(id).textContent;
+}
+
+function setbgColor(id, clr) {
+    document.getElementById(id).style.backgroundColor=clr;
+}
+
+function goUrl(theurl) {
+    this.document.location.href = theurl;
+}
+
+function focusOn(id) {
+    document.getElementById(id).focus();
+}
+
+function clickElement(id) {
+    document.getElementById(id).click();
+}
+
+function getelm(id) {
+    return document.getElementById(id);
+}
+
+function uniqID(len=8) {
+  var st = "";
+  var hex = "abcdef0123456789";
+
+  for (var i = 0; i < len; i++) {
+    st += hex.charAt(Math.floor(Math.random() * hex.length));
+    st += hex.charAt(Math.floor(Math.random() * hex.length));
+  }
+  return st;
+}
+
+
+
+function uploadFiles(
+    respond_url, // server url
+    input, // file input element
+    progressbar='', // div: progress bar
+    percentage='', // div: percentage
+    statusbar=''   // div: status
+) {
+    const fileInput = document.getElementById(input);
+    const files = fileInput.files;
+    if (files.length === 0) return;
+
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+        formData.append('files[]', files[i])
+    }
+
+    const xhr = new XMLHttpRequest()
+
+    if (progressbar!='' && percentage!='') {
+        const progressBar = document.getElementById(progressbar);
+        const percentageText = document.getElementById(percentage);        
+        xhr.upload.onprogress = function(event) {
+            if (event.lengthComputable) {
+                const percentComplete = 
+                    Math.round((event.loaded / event.total) * 100)
+                progressBar.value = percentComplete
+                percentageText.innerText = percentComplete + "%"
+            }
+        }
+    }
+    
+    if(statusbar!='') {
+        const status = document.getElementById(statusbar);
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                status.innerText = "ok:" + xhr.responseText;
+            } else {
+                status.innerText = "error:";
+            }
+        }
+    }
+    
+    xhr.open('POST', respond_url, true);
+    xhr.send(formData);
+}
+
+/** MODAL DIALOG **/
+
+function createModal(id,txt) {
+    
+    var ht='<div id="myModal" class="modal"><div class="modal-content">';
+    ht+='<button id="myCloser" class="close">&times;</button>';
+    ht+='<div id="dlgContent">'+txt+'</div>';
+    ht+='</div></div>';
+    setText(id,ht);
+    getelm(id).style.zIndex=2000
+    
+    var modal = document.getElementById("myModal");
+    var btn = document.getElementById("ctrlButton");
+    var span = document.getElementsByClassName("close")[0];
+
+    btn.onclick = function() {
+        modal.style.display = "block";
+    }
+
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+    
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+
+}
+
+function modalText(txt) {
+	setText('dlgContent', txt);
+}
+
+function showModal(txt='') {
+	if(txt!='') setText('dlgContent', txt);
+	getelm('ctrlButton').click();
+}
+
+function hideModal() {
+	getelm("myModal").style.display="none";
+}
+
+
+// text replacement with variable
+// rep is an object, {key:value, ...}
+// key->to be replaced, value -> replacement
+// subtext format to be replaced: {{text}}
+// NO SPACE BETWEEN!
+// if value is array(3) -> [0] condition, [1] true replacement, [2] false replacement
+
+function text_replace(txt, rep) {
+	Object.entries(rep).forEach(([key, value])=> {
+		key='{{'+key+'}}'
+		if(Array.isArray(value)) {
+			if(value[0]) txt=txt.replaceAll(key,value[1])
+			else txt=txt.replaceAll(key,value[2])
+		}
+		else txt=txt.replaceAll(key,value);
+	});
+	return txt;
+}
+

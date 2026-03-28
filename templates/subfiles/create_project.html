@@ -1,0 +1,27 @@
+<div class='infotext'>Create new project</div>
+<div id='projectform'>
+	<div class='input-group'>
+		<label for='prjname'>Project name</label>
+		<input id='prjname' type='text' class='sedit' placeholder='project name'>
+	</div>
+	<div class='input-group'>
+		<label for='prjtype'>Type</label>
+		<select id='prjtype' type='text' class='sedit'>
+			<option value='common'>common project</option>
+			<option value='lammps'>lammps project</option>
+			<option value='notebook'>notebook analysis</option>
+		</select>
+	</div>
+	<div class='input-group'>
+		<label for='prjwdir'>Working directory</label>
+		<input id='prjwdir' type='text' class='sedit' placeholder='working directory'>
+	</div>
+	<div class='input-group'>
+		<label for='prjnote'>Note</label>
+		<textarea id='prjnote' type='text' class='sedit' placeholder='Project information'></textarea>
+	</div>
+</div>
+<div class='control-group'>
+	<button onclick='create_new_project(this)'>Create</button>
+	<div id='prj_statbar' class='infotext'><div>
+</div>

@@ -1,0 +1,160 @@
+@import url('https://fonts.googleapis.com/css?family=Montserrat:500');
+
+body {
+	display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  color: #641E16;
+	font-family: 'Montserrat', sans-serif;
+  font-size:14px;
+}
+
+#maincontent {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+	
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+th {
+  border: 1px solid #dddddd;
+  background: #D5DBDB;
+  text-align: center;
+  padding: 2px;
+}
+
+td {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 5px;
+  padding-left:20px;
+  padding-right:20px;
+}
+
+.dynrow {pointer-events: auto;}
+.dynrow:hover {background-color: #FEF9E7;}
+
+footer {
+  text-align: center;
+}
+
+.infobox {
+  width:800px;
+  padding-left:20px;
+  padding-right:20px;
+  font-size: 1.2em;
+  margin-left:auto;
+  margin-right:auto;
+  border-radius:15px;
+  background-color: #FEF9E7;
+}
+
+.dropbtn {
+  background-color: #FBEEE6;
+  font-weight: bold;
+  font-size:1.2em;
+  color: #641E16;
+  margin-top:0;
+  margin-bottom:0;
+  border: none;
+  width:100%;
+}
+
+.dropdown {
+  font-size: 1.2em;
+  font-weight: bold;
+  text-align: center;
+	align-content: center;
+  border: none;
+  background-color: #FBEEE6; 
+}
+
+.dropdown:hover {background-color: #E59866;}
+
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f1f1f1;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.dropdown-content a {
+  color: black;
+  padding: 10px 10px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+}
+
+.dropdown-content a:hover {background-color: #ddd;}
+.dropdown:hover .dropdown-content {display: block;}
+
+/*action field*/
+
+.action {
+  font-weight: bold;
+  text-align: center;
+}
+
+.action:hover {background-color: #E59866;}
+
+.action-content {
+  display: none;
+  position: absolute;
+  background-color: #F0F3F4;
+  min-width: 100px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  padding: 5px 5px;
+  z-index: 1;
+}
+
+.action-content a {
+  color: black;
+  padding: 10px 10px;
+  text-decoration: none;
+  display: block;
+  text-align: left;
+}
+
+.action-content a:hover {background-color: #ddd;}
+.action:hover .action-content {display: block;}
+
+.barlabel {
+  vertical-align: text-top;
+  text-align:left;
+  font-weight: bold;
+  padding-top:10px;
+  width:15%;
+  border:none;
+}
+
+.noborder {
+  border: none;
+  text-align: left;
+  vertical-align:top;
+  padding: 2px;
+}
+
+.userpage {
+	width: 1000px;
+  margin-left:auto;
+  margin-right:auto;
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items:stretch;
+	gap: 10px;
+}
+
+
+

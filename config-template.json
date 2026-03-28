@@ -1,0 +1,12 @@
+{
+	"name": "Your HPC name",
+	"manager": "Manager information",
+	"mail": "you@yourmail",
+	"host": "hpc-host:and-port",
+	"jupyterlink": "url to jupyter hub",
+	"creds": "credentials directory path",
+	"state": "/path/to/hpc-state-files",
+	"data": "/path/to/application/data",
+	"userconf": ".path/to/users/configuration/dir",
+	"templates": "/path/to/project/templates"
+}

@@ -1,0 +1,38 @@
+<div>
+
+<div id="butpool" class='tabselect'>
+	<button id='sel01' class='tabbutton-sel' onclick='select_tab(this.id.replace("sel","tab"));' >user data</button>
+	<button id='sel02' class='tabbutton' onclick='select_tab(this.id.replace("sel","tab"));'>hpc queue</button>
+	<button id='sel03' class='tabbutton' onclick='select_tab(this.id.replace("sel","tab"));'>projects</button>
+</div>
+<div id="tabpool">
+  <!-- tab 01: user data -->
+	<div id='tab01' class=tabcontent style='display:block'> <!-- tab manager -->
+	<div id='userinfo'></div>
+	</div>
+
+	<!-- tab 02: queue -->
+	<div id='tab02' class='tabcontent'>
+		<div id='queueinfo'></div>
+
+	<!-- 
+		update button
+		every tab may have enter and leave callback. 
+		enter: enter
+		leave: leave
+
+	-->
+	
+		<button name='enter' style='display:none' onclick='queueUpdate();'></button>
+		<button name='leave' style='display:none' onclick='queueLeave();'></button>
+	</div>
+
+	<!-- tab 03 : projects -->
+	<div id='tab03' class='tabcontent'>
+		<div id='userspace'></div>
+		<button name='enter' style='display:none' onclick='projectEnter();'></button>
+		<button name='leave' style='display:none' onclick='projectLeave();'></button>
+	</div>
+</div>
+
+</div>

@@ -1,0 +1,43 @@
+<div style='display:flex;gap:10px'>
+    <div>
+        <div class='input-group'>
+            <label for='chart-prov-upload'>Upload local file</label>
+            <input type='file' id='chart-prov-upload'  multiple>
+        </div>
+        <div style='margin: 10px auto 0px auto'>
+            <button 
+                onclick='
+                    uploadFiles(
+                    "/provupload",
+                    "chart-prov-upload",
+                    "chart-prov-pbar",
+                    "chart-prov-pct",
+                    "chart-prov-status"
+                )'>upload files</button>
+        </div>
+            <!-- progress bar divs -->
+        <div id='chart-prov-progress'>
+            <div>
+                <span id='chart-prov-pbar'></span>
+                <span id='chart-prov-pct'></span>
+            </div>
+            <div id='chart-prov-status'></div>
+        </div>
+        <div class='input-group'>
+            <label for='chart-prov-download'>Download form url</label>
+            <input type='text' id='chart-prov-download'>
+        </div>
+        <div class='input-group'>
+            <button id='chart-prov-link'>Link file</button>
+        </div>
+    </div>
+<div style='flex:1 1 100%'>
+    <div class='input-group'>
+            <label for='chart-prov-script'>Files list</label>
+            <textarea id='chart-prov-script' 
+            style='background:gray' 
+            readonly>
+            </textarea>    
+    </div>
+</div>
+</div>

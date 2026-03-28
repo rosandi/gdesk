@@ -1,0 +1,4 @@
+#!/bin/bash
+echo args: $1
+echo download to be implemented
+echo link tobe implemented

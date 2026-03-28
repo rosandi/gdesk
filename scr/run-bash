@@ -1,0 +1,5 @@
+#!/bin/bash
+#echo $@
+scr=$1
+shift
+/bin/bash $scr $@
