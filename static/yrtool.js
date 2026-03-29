@@ -23,7 +23,7 @@ function postJSON(surl, data, func) {
     var request = new XMLHttpRequest();
     request.open('POST', surl, true);
     request.setRequestHeader('Content-type', 'application/json');
-    
+
     request.onload = function() {
         if (this.status >= 200 && this.status < 400) {
             console.log(this.response);
@@ -33,13 +33,13 @@ function postJSON(surl, data, func) {
             console.log("not found "+surl);
         }
     }
-    
+
     request.send(JSON.stringify(data));
 }
 
 function postObject(url,obj,func) {
     var req = new XMLHttpRequest();
-    
+
     req.onload=function() {
         var data=JSON.parse(this.response);
         func(data);
@@ -144,17 +144,17 @@ function uploadFiles(
 
     if (progressbar!='' && percentage!='') {
         const progressBar = document.getElementById(progressbar);
-        const percentageText = document.getElementById(percentage);        
+        const percentageText = document.getElementById(percentage);
         xhr.upload.onprogress = function(event) {
             if (event.lengthComputable) {
-                const percentComplete = 
+                const percentComplete =
                     Math.round((event.loaded / event.total) * 100)
                 progressBar.value = percentComplete
                 percentageText.innerText = percentComplete + "%"
             }
         }
     }
-    
+
     if(statusbar!='') {
         const status = document.getElementById(statusbar);
         xhr.onload = function() {
@@ -165,7 +165,7 @@ function uploadFiles(
             }
         }
     }
-    
+
     xhr.open('POST', respond_url, true);
     xhr.send(formData);
 }
@@ -173,14 +173,14 @@ function uploadFiles(
 /** MODAL DIALOG **/
 
 function createModal(id,txt) {
-    
-    var ht='<div id="myModal" class="modal"><div class="modal-content">';
+
+    var ht='<div id="myModal" class="modal">'
+    ht+='<div id="modal-content" class="modal-content" style="left:200px;top:100px">';
     ht+='<button id="myCloser" class="close">&times;</button>';
     ht+='<div id="dlgContent">'+txt+'</div>';
     ht+='</div></div>';
     setText(id,ht);
-    getelm(id).style.zIndex=2000
-    
+
     var modal = document.getElementById("myModal");
     var btn = document.getElementById("ctrlButton");
     var span = document.getElementsByClassName("close")[0];
@@ -192,7 +192,7 @@ function createModal(id,txt) {
     span.onclick = function() {
         modal.style.display = "none";
     }
-    
+
     window.onclick = function(event) {
         if (event.target == modal) {
             modal.style.display = "none";
@@ -201,17 +201,40 @@ function createModal(id,txt) {
 
 }
 
+function draggableModal() {
+    let isDragging = false
+    let el=getelm("modal-content")
+
+    el.onmousedown = (e) => {
+        isDragging = true
+        const offsetX = e.clientX - el.offsetLeft
+        const offsetY = e.clientY - el.offsetTop
+
+        document.onmousemove = (e) => {
+          if (!isDragging) return
+          el.style.left = (e.clientX - offsetX) + 'px'
+          el.style.top = (e.clientY - offsetY) + 'px'
+        }
+
+        document.onmouseup = () => {
+            if (! isDragging) return
+            isDragging = false
+        }
+    }
+}
+
 function modalText(txt) {
-	setText('dlgContent', txt);
+    setText('dlgContent', txt);
 }
 
 function showModal(txt='') {
-	if(txt!='') setText('dlgContent', txt);
-	getelm('ctrlButton').click();
+    if(txt!='') setText('dlgContent', txt);
+    getelm('ctrlButton').click();
+    draggableModal()
 }
 
 function hideModal() {
-	getelm("myModal").style.display="none";
+    getelm("myModal").style.display="none";
 }
 
 
@@ -223,14 +246,14 @@ function hideModal() {
 // if value is array(3) -> [0] condition, [1] true replacement, [2] false replacement
 
 function text_replace(txt, rep) {
-	Object.entries(rep).forEach(([key, value])=> {
-		key='{{'+key+'}}'
-		if(Array.isArray(value)) {
-			if(value[0]) txt=txt.replaceAll(key,value[1])
-			else txt=txt.replaceAll(key,value[2])
-		}
-		else txt=txt.replaceAll(key,value);
-	});
-	return txt;
+    Object.entries(rep).forEach(([key, value])=> {
+        key='{{'+key+'}}'
+        if(Array.isArray(value)) {
+            if(value[0]) txt=txt.replaceAll(key,value[1])
+            else txt=txt.replaceAll(key,value[2])
+        }
+        else txt=txt.replaceAll(key,value);
+    });
+    return txt;
 }
 

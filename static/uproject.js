@@ -100,14 +100,14 @@ function save_chart(cid) {
     }
 
     draw_chart(c)
-    console.log(project_charts)
+    // console.log(project_charts)
 }
 
 function sync_editdata(c) {
     setval('chart-type', c.type)
     // FIXME!
-    setval('chart-in-link', c.links['in'])
-    setval('chart-out-link', c.links['out'])
+    //setval('chart-in-link', c.links['in'])
+    //setval('chart-out-link', c.links['out'])
 
     if(c.type == 'executor') {
         setval('chart-exec-type', c.execution['type'])
@@ -307,10 +307,10 @@ function prepare_arrows(fro, to) { // fro&to: id
     ss="<svg class='chart-connector'>"
     ss+="<line id='conn"+fro+to+"-1' "
     ss+="x1='0' y1='0' x2='0' y2='0' "
-    ss+="stroke='#3498db' stroke-width='3' marker-end='url(#arrowhead)'/>"
+    ss+="stroke='#3498db' stroke-width='2' marker-end='url(#arrowhead)'/>"
     ss+="<line id='conn"+fro+to+"-2' "
     ss+="x1='0' y1='0' x2='0' y2='0' "
-    ss+="stroke='#3498db' stroke-width='3'/>"
+    ss+="stroke='#3498db' stroke-width='2'/>"
     ss+="</svg>"
     appendtext('parea',ss)
 }
@@ -366,6 +366,7 @@ function draggable(el) {
     let isDragging = false
     let posx
     let posy
+    let parea=getelm('parea')
 
     el.onmousedown = (e) => {
         posx=el.style.left
@@ -381,14 +382,14 @@ function draggable(el) {
         const offsetX = e.clientX - el.offsetLeft
         const offsetY = e.clientY - el.offsetTop
 
-        document.onmousemove = (e) => {
+        parea.onmousemove = (e) => {
           if (!isDragging) return
           el.style.left = (e.clientX - offsetX) + 'px'
           el.style.top = (e.clientY - offsetY) + 'px'
           updateLine(el); // Update the line while dragging
         }
 
-        document.onmouseup = () => {
+        parea.onmouseup = () => {
             if (! isDragging) {
                 return
             }
@@ -411,7 +412,7 @@ function draggable(el) {
                     }
 
                 }
-                console.log('chart selected', linkto)
+                // console.log('chart selected', linkto)
 
             } else {
                 change_coord(el)
@@ -514,8 +515,8 @@ function chart_designer(pname) {
     ss+="<button onclick='save_project_charts();'>save projects</button>"
     ss+="</div>"
     ss+=`<svg class='chart-connector'><defs><marker id="arrowhead"
-    markerWidth="10" markerHeight="7" refX="9" refY="3.5"
-    orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#3498db" />
+    markerWidth="6" markerHeight="4" refX="4" refY="2"
+    orient="auto"><polygon points="0 0, 5 2, 0 4" fill="#E05338" />
     </marker></defs></svg>`
     ss+="<div id='parea' class='project-area'></div>"  // project area div name: 'parea'
     setText('prjtable', ss)
