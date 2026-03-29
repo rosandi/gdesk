@@ -1,0 +1,58 @@
+services:
+  head:
+    image: rosandi/ghead
+    hostname: ghead
+    container_name: ghead
+    ports:
+      - 80:5000
+    networks: 
+      - guriang
+    volumes:
+      - slurmstate:/var/slurm
+      - gshare:/home
+      - ./:/opt/gdesk
+      - ./ghpc-config.json:/etc/ghpc-config.json
+
+  node01:
+    image: rosandi/gnode
+    hostname: node01
+    container_name: node01
+    networks: 
+      - guriang
+    volumes:
+      - gshare:/home
+
+  node02:
+    image: rosandi/gnode
+    hostname: node02
+    container_name: node02
+    networks: 
+      - guriang
+    volumes:
+      - gshare:/home
+
+  node03:
+    image: rosandi/gnode
+    hostname: node03
+    container_name: node03
+    networks: 
+      - guriang
+    volumes:
+      - gshare:/home
+
+  node04:
+    image: rosandi/gnode
+    hostname: node04
+    container_name: node04
+    networks: 
+      - guriang
+    volumes:
+      - gshare:/home
+
+volumes:
+  gshare:
+  slurmstate:
+ 
+networks:
+  guriang:
+
