@@ -467,9 +467,11 @@ def create_newproject(pdata):
 
         # 2. prepare files
         scrpath=f'{uinfo['directory']}/{pdata['wdir']}/scr'
-        ssh_putfile('scr/run-bash', scrpath)
-        ssh(f'chmod +x {scrpath}/*')
+        scrlst=os.listdir('scr')
 
+        for scr in scrlst:
+            ssh_putfile(f'scr/{scr}', f'{scrpath}/{scr}')
+            ssh(f'chmod +x {scrpath}/*')
 
     except Exception as e:
         print('error: project not created')
@@ -512,25 +514,29 @@ def project():
 
 #########################
 # Chart executions
-#
+# returns file list @in directory
 
 def run_provider(c, wdir):
+    # c -> the chart
+    # cached files stored in tmp dir
     # 1. transfer files in tmp/token to wdir/in
     # 2. download using wget to wdir/in
     # 3. make links to wdir/in
-    # 4. cleanup
+    # cleanup
 
+    print('running provider chart: ')
     for d in os.listdir(f'tmp/{session['token']}'):
         ssh_putfile(f'tmp/{session['token']}/{d}', f'{wdir}/in')
 
     ssh(f'rm tmp/{session['token']}')
+
     scrprov=f'{wdir}/scr/run-provider'
     scrpath=f'{wdir}/tmp/{c['id']}.lst'
     ssh_savetext(c['execution']['script'], scrpath)
     out=ssh_raw(f'{scrprov} {scrpath}')
+
     infilelist=ssh(f'ls -1 {wdir}/in')
     return {'input': infilelist}
-
 
 def run_executor(c, wdir):
 
@@ -551,16 +557,22 @@ def run_validator():
 def run_analyst():
     pass
 
+# arguments:
+#  p   -> project info file
+#  cid -> chart id
+
 def execute_chart(p,cid):
     wdir=project_wdir(p)
     charts=json.loads(ssh_gettext(f'{wdir}/project.json'))
     thechart=None
+
+    # find chart id
     for chart in charts:
         if chart['id'] == cid:
             thechart=chart
             break
 
-    if not thechart:return
+    if not thechart: return
 
     if thechart['type'] == 'provider':
         return jsonify(run_provider(thechart, wdir))
@@ -578,6 +590,9 @@ def execute_chart(p,cid):
     return {'output': 'not implemented', 'status': True}
 
 
+# executes chart scripts
+# charts are read from project.json
+
 @app.route('/runchart')
 @api_login_required
 def runchart():
@@ -585,6 +600,7 @@ def runchart():
     cid=request.args.get('c')
     return execute_chart(p,cid)
 
+# Upload file (provider chart)
 @app.route('/provupload', methods=['POST'])
 def provider_upload_files():
     # Use getlist to catch all files sent under the 'files[]' key

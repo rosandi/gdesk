@@ -65,10 +65,9 @@ function save_chart(cid) {
     var c=find_chart_by_id(cid)
     c.name=getval('chartname')
     c.type=getval('chart-type')
-    c.act=getelm('chart-act').checked
+    c.act=!getelm('chart-bypass').checked
     c.execution={}
-
-    //console.log(c)
+    console.log('save chart:',c)
 
     // FIXME! links
     //c.links['in'].push(getval['chart-in-link'])
@@ -135,6 +134,66 @@ function sync_editdata(c) {
     }
 }
 
+function text_editor(tael) {
+    const textarea = document.getElementById(tael);
+    console.log(tael, textarea)
+    textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            textarea.value = textarea.value.substring(0, start) + "    " + textarea.value.substring(end);
+            textarea.selectionStart = textarea.selectionEnd = start + 2;
+        }
+
+        if (e.key === 'Enter') {
+            const cursorPosition = textarea.selectionStart;
+            const textBeforeCursor = textarea.value.substring(0, cursorPosition);
+            const lastNewline = textBeforeCursor.lastIndexOf('\n');
+            const currentLine = textBeforeCursor.substring(lastNewline + 1);
+            const whitespaceMatch = currentLine.match(/^\s*/);
+            const whitespace = whitespaceMatch ? whitespaceMatch[0] : "";
+            if (whitespace.length > 0) {
+                e.preventDefault();
+                const textAfterCursor = textarea.value.substring(cursorPosition);
+                textarea.value = textBeforeCursor + "\n" + whitespace + textAfterCursor;
+                textarea.selectionStart = textarea.selectionEnd = cursorPosition + whitespace.length + 1;
+            }
+        }
+    });
+}
+
+function setup_provider(c) {
+    text_editor('chart-prov-script')
+
+    let fu=getelm('chart-prov-upload')
+    fu.addEventListener('change', (ev) => {
+        console.log('files:', ev.target.files)
+        let tx=getval('chart-prov-script')
+        let files=ev.target.files
+        for (let i=0;i<files.length;i++) {
+            tx+="\nupload: "+files[i].name+"("+files[i].size+")"
+        }
+        setval('chart-prov-script', tx)
+    })
+
+    let fd=getelm('chart-prov-download')
+    fd.addEventListener('focusout', (ev) => {
+        let tx=getval('chart-prov-script')
+        let td=ev.target.value
+        if(td.startsWith('http://') || td.startsWith('https://')) {
+            tx+="\ndownload: "+td
+            setval('chart-prov-script', tx)
+        }
+    })
+}
+
+function setup_executor(c) {
+    console.log('setup exec')
+    text_editor('chart-exec-script')
+}
+
+
 // parameter: the charts id, not chart array index!
 function edit_chart(id) {
     var cid=0
@@ -152,7 +211,7 @@ function edit_chart(id) {
         replacement={
             id: c.id,
             boxid: c.id,
-            act: [c.act, "checked",""],
+            act: [c.act, "","checked"],
             name: [
                 c.name=='noname',
                 "placeholder='Enter chart name'",
@@ -170,37 +229,24 @@ function edit_chart(id) {
             ct['analyst']=data[3]
 
             if (c.type != '') setText('chart-type-form', ct[c.type])
-            exsh=getelm('chart-type')
 
+            exsh=getelm('chart-type')
             exsh.addEventListener('change', (e)=> {
+
                 setText('chart-type-form', ct[exsh.value])
+
+                if (exsh.value == 'provider') {
+                    setup_provider(c)
+                }
+
+                else if (exsh.value == 'executor') {
+                    setup_executor(c)
+                }
+
             })
 
-
-            if (c.type == 'provider') {
-                let fu=getelm('chart-prov-upload')
-                fu.addEventListener('change', (ev) => {
-                    console.log('files:', ev.target.files)
-                    let tx=getval('chart-prov-script')
-                    let files=ev.target.files
-                    for (let i=0;i<files.length;i++) {
-                        tx+="\nupload: "+files[i].name+"("+files[i].size+")"
-                    }
-                    setval('chart-prov-script', tx)
-                })
-                let fd=getelm('chart-prov-download')
-                fd.addEventListener('focusout', (ev) => {
-                    let tx=getval('chart-prov-script')
-                    let td=ev.target.value
-                    if(td.startsWith('http://') || td.startsWith('https://')) {
-                        tx+="\ndownload: "+td
-                        setval('chart-prov-script', tx)
-                    }
-                })
-            }
-
-        sync_editdata(c)
-        showModal()
+            sync_editdata(c)
+            showModal()
         })
     })
 }
@@ -208,8 +254,8 @@ function edit_chart(id) {
 function change_chart_act(chk, id) {
     //console.log('change:', chk.checked)
     let c=find_chart_by_id(id)
-    console.log(c,id,cid)
-    c.act=chk.checked
+    c.act=!chk.checked
+    //console.log('change act:',c)
 }
 
 function execute_chart(id) {
@@ -217,6 +263,11 @@ function execute_chart(id) {
      c=find_chart_by_id(id)
      if (c.name='noname') return
      if (chart_dirty) save_project_charts()
+
+    // passed to server:
+    // -> project filename
+    // -> chart id
+
      getJSON("/runchart?p="+project_data.filename+"&c="+id, (out)=>{
         // output from execution
         console.log(out)
@@ -233,15 +284,14 @@ function draw_chart(c) {
      * - check: active/passive
      * - buttons: edit
      */
-
+    //console.log(c.act)
     ss="<div class='chart-group'>"
     ss+="<div>"+c.name+"<br>"+c.id+"</div>"
     ss+="<div style='display:flex;gap:5px;margin-left:auto;margin-right:auto'>"
     ss+=c.type+"</div>"
     ss+="<div><input type='checkbox'"
-    ss+="onclick='change_chart_act(this,\""+c.id+"\")' "
-    ss+=c.act?"checked>":">"
-    ss+="<label for='chart-act'>active</label></div>"
+    ss+="onclick='change_chart_act(this,\""+c.id+"\")' "+((!c.act)?"checked>":">")
+    ss+="<span style='margin-bottom:5px'>bypass</span></div>"
     ss+="<div style='display:flex;gap:5px;margin-left:auto;margin-right:auto'>"
     ss+="<button onclick='edit_chart(\""+c.id+"\")'>edit</button>"
     ss+="<button onclick='execute_chart(\""+c.id+"\")'>run</button>"
@@ -369,6 +419,9 @@ function draggable(el) {
     let parea=getelm('parea')
 
     el.onmousedown = (e) => {
+        tag=e.target.tagName
+        if (tag == 'BUTTON' || tag=='INPUT') return
+
         posx=el.style.left
         posy=el.style.top
 
@@ -475,7 +528,8 @@ function add_chart(div='parea') {
         name: "noname",
         type: "",
         links: {in: [], out: []},
-        act: true
+        act: true, // activated or bypassed
+        status: true  // hold the last execution status
     }
 
     ss="<div id='"+c.id+"' class='stage-box' "
@@ -504,35 +558,38 @@ function fix_charts_element() {
 }
 
 function chart_designer(pname) {
-    //console.log(project_data)
-    hideModal()
-    if (project_data==null) return
+    getJSON('/project?list='+pname, (p) => {
+        //console.log(p)
+        project_data=p[0]
+        console.log('designer:', project_data)
+        hideModal()
+        if (project_data==null) return
 
-    ss="<div class='infotext'>Project: "
-    ss+=project_data.name+"</div>"
-    ss+="<div class='control-group'>"
-    ss+="<button onclick='add_chart();'>create stage</button>"
-    ss+="<button onclick='save_project_charts();'>save projects</button>"
-    ss+="</div>"
-    ss+=`<svg class='chart-connector'><defs><marker id="arrowhead"
-    markerWidth="6" markerHeight="4" refX="4" refY="2"
-    orient="auto"><polygon points="0 0, 5 2, 0 4" fill="#E05338" />
-    </marker></defs></svg>`
-    ss+="<div id='parea' class='project-area'></div>"  // project area div name: 'parea'
-    setText('prjtable', ss)
+        ss="<div class='infotext'>Project: "
+        ss+=project_data.name+"</div>"
+        ss+="<div class='control-group'>"
+        ss+="<button onclick='add_chart();'>create stage</button>"
+        ss+="<button onclick='save_project_charts();'>save projects</button>"
+        ss+="</div>"
+        ss+=`<svg class='chart-connector'><defs><marker id="arrowhead"
+        markerWidth="6" markerHeight="4" refX="4" refY="2"
+        orient="auto"><polygon points="0 0, 5 2, 0 4" fill="#E05338" />
+        </marker></defs></svg>`
+        ss+="<div id='parea' class='project-area'></div>"  // project area div name: 'parea'
+        setText('prjtable', ss)
 
-    // FIXME clear charts!
-    // load from browser memory would be nice!
+        // FIXME clear charts!
+        // load from browser memory would be nice!
 
-    project_charts=[]
-    getJSON('/project?fetch='+pname, (p)=>{
-        if (p.length > 0) {
-            project_charts=p
-            fix_charts_element()
-            draw_charts()
-        }
+        project_charts=[]
+        getJSON('/project?fetch='+pname, (p)=>{
+            if (p.length > 0) {
+                project_charts=p
+                fix_charts_element()
+                draw_charts()
+            }
+        })
     })
-
 }
 
 function save_project_info(pname) {
@@ -561,12 +618,12 @@ function save_project_info(pname) {
  * project_data is assigned HERE! -> project info (not the charts)
  */
 
-function edit_project(elm) {
-    pname=elm.cells[0].textContent
+function edit_project(pname) {
     getJSON('/project?list='+pname, (p) => {
+        //console.log(p)
         project_data=p[0]
         getText('/subpage?p=edit_project', (ss)=>{
-            sel=p[0].status
+            let sel=p[0].status
 
             replacement={
                 name: p[0].name,
@@ -623,16 +680,29 @@ function remove_project() {}
 function listProject(div) {
     getJSON('/project?list=all', (p)=>{
         //console.log(p)
+        // TODO: move to html template!
         ss="<div class='fullcard'>"
         ss+="<div>"
-            ss+="<div class='infotext'>Project list</div>"
-            ss+="<table>"
-            ss+="<tr><th>Project name</th><th>Type</th><th>Working Directory</th><th>State</th></tr>"
-            for(var i=0; i<p.length; i++) {
-                ss+="<tr class='dynrow' onclick='edit_project(this);'><td hidden>"+p[i].filename+"</td>"
-                ss+="<td>"+p[i].name+"</td><td>"+p[i].type+"</td><td>"+p[i].wdir+"</td><td>"+p[i].status+"</td></tr>"
-            }
-            ss+="</table>"
+        ss+="<div class='infotext'>Project list</div>"
+        ss+="<table>"
+        ss+="<tr>"
+        ss+="<th style='width:120px'></th>"
+        ss+="<th>Project name</th>"
+        ss+="<th>Type</th><th>Working Directory</th><th>State</th></tr>"
+        for(var i=0; i<p.length; i++) {
+            ss+="<tr class='dynrow'>"
+            ss+="<td hidden>"+p[i].filename+"</td>" // <-- this must be the first cell!
+            ss+="<td style='width:120px;padding:0px'>"
+            ss+="<div style='display:flex;gap:5px;justify-content:center'>"
+            ss+="<button class='smallies' onclick='edit_project(\""+p[i].filename+"\");'>"
+            ss+="edit</button>"
+            ss+="<button class='smallies' onclick='chart_designer(\""+p[i].filename+"\")'>"
+            ss+="charts</button>"
+            ss+="</div></td>"
+            ss+="<td><input type='checkbox' style='margin-right:10px' id='"+p[i].filename+"'>"+p[i].name+"</td>"
+            ss+="<td>"+p[i].type+"</td><td>"+p[i].wdir+"</td><td>"+p[i].status+"</td></tr>"
+        }
+        ss+="</table>"
         ss+="</div>"
 
         ss+="<div>"

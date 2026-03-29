@@ -332,36 +332,35 @@
 }
 
 .input-group input,
-.input-group textarea,
 .input-group select {
-  width: 100%;
-  padding: 8px;
-  border: 2px solid #ccc;
-  border-radius: 4px;
-  font-size: 12px;
-  font-family: inherit; /* Textareas don't always inherit font-family */
-  display: block;
-  box-sizing: border-box;
+    width: 100%;
+    padding: 8px;
+    border: 2px solid #ccc;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: inherit; /* Textareas don't always inherit font-family */
+    display: block;
+    box-sizing: border-box;
 }
 
 /* Specific adjustment for Textarea */
 .input-group textarea {
-        flex: 0 0 300px;
-        height: 180px;
-        display: block;
+    flex: 0 0 300px;
+    height: 180px;
+    display: block;
     box-sizing: border-box;
-        background-color: #1e1e1e; /* Slightly lighter than the page bg */
-  color: #ffffff;            /* Pure white text */
+    background-color: #1e1e1e; /* Slightly lighter than the page bg */
+    color: #ffffff;            /* Pure white text */
 }
 
 /* Optional: Change border color on focus */
 .input-group input:focus,
 .input-group textarea:focus {
-  border-color: #4ecdc4;
+    border-color: #4ecdc4;
 }
 
 .input-group input:focus + label {
-  color: #4ecdc4;
+    color: #4ecdc4;
 }
 
 /***** CHARTS *****/
@@ -379,58 +378,84 @@
         justify-content: flex-start;
 */
     padding:10px;
-        background-color: #f5fdfd;
-        border-radius: 10px;
+    background-color: #f5fdfd;
+    border-radius: 10px;
 }
 
 /* this is the chart box! */
 .stage-box {
     position: absolute;
-        height: 100px;
-        width: 100px;
-        padding:5px;
-        background-color: #F0B13B;
-        box-shadow: 10px 10px 5px #888888;
-        border-radius: 10px;
+    height: 100px;
+    width: 100px;
+    padding:5px;
+    background-color: #F0B13B;
+    box-shadow: 10px 10px 5px #888888;
+    border-radius: 10px;
+    cursor: pointer;
 }
 
 .chart-connector {
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
-  pointer-events: none; /* Allows clicking "through" the SVG to the boxes */
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Allows clicking "through" the SVG to the boxes */
 }
 
 .stage-box.highlight {
-        background-color: #BA7783;
+    background-color: #BA7783;
 }
 
 .chart-group {
-        display: flex;
-        height:100px;
-        flex-direction: column;
-        justify-content: space-between;
-        justify-items: center;
-        font-size:10px;
-        font-weight: bold;
-        color: black;
+    display: flex;
+    height:100px;
+    flex-direction: column;
+    justify-content: space-between;
+    justify-items: center;
+    font-size:10px;
+    font-weight: bold;
+    color: black;
 }
 
 .chart-group button {
-        flex: 0 0 20px;
-        height: 20px;
-        font-size:10px;
-        font-weight: bold;
-        background-color: rgba(97, 25, 11, 0.8);
-        color:white;
-        border-color: #541F14;
-        border-radius:20px;
+    flex: 0 0 20px;
+    height: 20px;
+    font-size:10px;
+    font-weight: bold;
+    background-color: rgba(97, 25, 11, 0.8);
+    color:white;
+    border-color: #541F14;
+    border-radius:20px;
 }
 
 .chart-group button:hover {
-        font-weight: bold;
-        background-color: rgba(97, 25, 11, 1);
+    font-weight: bold;
+    background-color: rgba(97, 25, 11, 1);
+}
+
+.smallies {
+    background-color: rgba(97, 25, 11, 0.8);
+    width:50px;
+    color: white;
+    font-size:9px;
+    font-weight:bold;
+    border-color: 'none';
+    border-radius:5px;
+}
+
+.smallies:hover {
+    background-color: rgba(97, 25, 11, 1);
+}
+
+.code-editor {
+  width: 100%;
+  height: 300px;
+  font-family: 'Courier New', Courier, monospace;
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  padding: 10px;
+  border: 1px solid #333;
+  resize: both;
 }
