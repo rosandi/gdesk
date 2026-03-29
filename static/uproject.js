@@ -671,20 +671,51 @@ function create_project() {
 
 /***
  * to remove project
- * - select
+ * - checklist
  * - remove
  */
 
-function remove_project() {}
+function remove_confirmed(slist) {
+    flst=slist.trim().split(' ')
+    console.log(flst)
+    postJSON('/project?rm=lst', flst, (m)=>{
+        console.log(m)
+        listProject()
+        hideModal()
+    })
+}
 
-function listProject(div) {
+function remove_project() {
+    let cells=document.querySelectorAll('#all-projects-table td:nth-child(3)')
+    let nchk=0
+    let rmfile=''
+    let ss="<div class='warning'>the following projects will be removed:</div>"
+    ss+="<table><tr><th>project file</th><th>title</th>"
+    cells.forEach( (cell) => {
+        let rmchk=cell.querySelector('input')
+        if (rmchk.checked) {
+            ss+="<tr><td>"+rmchk.name+"</td><td>"+cell.innerText+"</td></tr>"
+            rmfile+=rmchk.name+' '
+            nchk++
+        }
+    })
+    if (nchk>0) {
+        ss+="</table><div class='control-group'>"
+        ss+="<button onclick='remove_confirmed(\""+rmfile+"\")'>remove</button>"
+        ss+="<button onclick='hideModal()'>cancel</button>"
+        ss+"</div>"
+        showModal(ss)
+    }
+}
+
+function listProject(div='prjtable') {
     getJSON('/project?list=all', (p)=>{
         //console.log(p)
         // TODO: move to html template!
-        ss="<div class='fullcard'>"
+        let ss="<div class='fullcard'>"
         ss+="<div>"
         ss+="<div class='infotext'>Project list</div>"
-        ss+="<table>"
+        ss+="<table id='all-projects-table'>"
         ss+="<tr>"
         ss+="<th style='width:120px'></th>"
         ss+="<th>Project name</th>"
@@ -699,7 +730,8 @@ function listProject(div) {
             ss+="<button class='smallies' onclick='chart_designer(\""+p[i].filename+"\")'>"
             ss+="charts</button>"
             ss+="</div></td>"
-            ss+="<td><input type='checkbox' style='margin-right:10px' id='"+p[i].filename+"'>"+p[i].name+"</td>"
+            ss+="<td><input type='checkbox' style='margin-right:10px' name='"+p[i].filename+"'>"
+            ss+=p[i].name+"</td>"
             ss+="<td>"+p[i].type+"</td><td>"+p[i].wdir+"</td><td>"+p[i].status+"</td></tr>"
         }
         ss+="</table>"
@@ -723,7 +755,7 @@ function listProject(div) {
 */
 
 function projectEnter() {
-    sdiv=`
+    let sdiv=`
     <div id='prjtable' class='card'></div>
     `
     setText('userspace', sdiv)

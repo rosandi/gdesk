@@ -424,14 +424,14 @@ def project_wdir(pfile):
     cfile=f'{userconf}/projects/{pfile}'
     ujs=json.loads(ssh_gettext(ufile))
     pjs=json.loads(ssh_gettext(cfile))
-    return f"{ujs['directory']}/{pjs['wdir']}"
+    return fix_filename(f"{ujs['directory']}/{pjs['wdir']}")
 
 def project_chart_filename(pfile):
     ufile=f'{userconf}/user.json'
     cfile=f'{userconf}/projects/{pfile}'
     ujs=json.loads(ssh_gettext(ufile))
     pjs=json.loads(ssh_gettext(cfile))
-    return f"{ujs['directory']}/{pjs['wdir']}/project.json"
+    return fix_filename(f"{ujs['directory']}/{pjs['wdir']}/project.json")
 
 def edit_projectinfo(pfile,pdata):
     cfile=f'{userconf}/projects/{pfile}'
@@ -476,6 +476,15 @@ def create_newproject(pdata):
     except Exception as e:
         print('error: project not created')
 
+def remove_projects(p, rm=''):
+    rmlst=[]
+    for cfl in p:
+        print('delete:',cfl)
+        rmlst.append(cfl)
+        if rm=='purge': # warning: remove all project data!
+            ssh(f'rm -rf {project_wdir(cfl)}')
+        ssh(f'rm -f project {userconf}/projects/{cfl}')
+    return ','.join(rmlst)
 
 @app.route('/project', methods=["GET", "POST"])
 @api_login_required
@@ -509,6 +518,12 @@ def project():
         p=project_chart_filename(prj)
         ssh_savetext(json.dumps(charts), p)
         return apiok('project charts saved')
+
+    prj=request.args.get('rm')
+    if prj:
+        rmp=request.get_json()
+        flst=remove_projects(rmp, prj)
+        return apiok(f'removed:{flst}')
 
     return apierr('wrong api: project');
 

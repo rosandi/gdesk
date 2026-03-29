@@ -116,12 +116,13 @@
 
 .warning {
         color: red;
+        font-weight: bold;
         margin-top: 10px;
         margin-bottom: 10px;
 }
 
 .infotext {
-        color: #972007;
+        color: #733025;
         font-weight: bold;
         margin-top: 10px;
         margin-bottom: 10px;
@@ -288,25 +289,30 @@
 /***** PROJECT CARDS Styles *****/
 
 .project_editcard {
-        display:flex;
-        gap: 10px;
-        flex-direction:column;
-        align-content: stretch;
-        padding:10px;
-        background-color: #f5fdfd;
-        border-radius: 10px;
-        overflow-x: auto;
-        overflow-y: auto;
+    display:flex;
+    gap: 10px;
+    flex-direction:column;
+    align-content: stretch;
+    padding:10px;
+    background-color: #f5fdfd;
+    border-radius: 10px;
+    overflow-x: auto;
+    overflow-y: auto;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin-top: 10px;
 }
 
 .control-group button {
-        color: black;
-  background-color: rgba(180,110,110,0.6);
-        border-color: rgba(180,110,110,0.6);
-  font-size: 14px;
-        border-radius: 50px;
-        margin-left: 10px;
-        margin-right:10px;
+    color: black;
+    background-color: rgba(180,110,110,0.6);
+    border-color: rgba(180,110,110,0.6);
+    font-size: 14px;
+    border-radius: 50px;
 }
 
 .control-group button:hover {
