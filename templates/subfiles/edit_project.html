@@ -1,33 +1,33 @@
 <div class='infotext'>Edit project settings</div>
 <div class='input-group'>
-	<label for='prjname'>Project name</label>
-	<input id='prjname' type='text' class='sedit' value='{{name}}'>
+        <label for='prjname'>Project name</label>
+        <input id='prjname' type='text' class='sedit' value='{{name}}'>
 </div>
 <div class='input-group'>
-	<label for='prjstate'>State</label>
-	<select id='prjstate' type='text' class='sedit'>
-		<option value='active' {{selactive}}>active</option>
-		<option value='finished' {{selfinished}}>finished</option>
-		<option value='pending' {{selpending}}>pending</option>
-		<option value='canceled' {{selcancel}}>canceled</option>
-	</select>
+        <label for='prjstate'>State</label>
+        <select id='prjstate' type='text' class='sedit'>
+                <option value='active' {{selactive}}>active</option>
+                <option value='finished' {{selfinished}}>finished</option>
+                <option value='pending' {{selpending}}>pending</option>
+                <option value='canceled' {{selcancel}}>canceled</option>
+        </select>
 </div>
 <div class='input-group'>
-	<label for='prjtype'>Type</label>
-	<input id='prjtype' type='text' class='sedit' value='{{type}}'>
+        <label for='prjtype'>Type</label>
+        <input id='prjtype' type='text' class='sedit' value='{{type}}'>
 </div>
 <div class='input-group'>
-	<label for='prjwdir'>Working directory</label>
-	<input id='prjwdir' type='text' class='sedit' value='{{wdir}}'>
+        <label for='prjwdir'>Working directory</label>
+        <input id='prjwdir' type='text' class='sedit' value='{{wdir}}' disabled>
 </div>
 <div class='input-group'>
-	<label for='prjnote'>Note</label>
-	<textarea id='prjnote' type='text' class='sedit'>{{note}}</textarea>
+        <label for='prjnote'>Note</label>
+        <textarea id='prjnote' type='text' class='sedit'>{{note}}</textarea>
 </div>
 <div  class='control-group'>
-	<button onclick='save_project_info("{{filename}}");'>Save changes</button>
-	<button onclick='chart_designer("{{filename}}");'>
-		Goto project chart
-	</button>
-	<div id='prj_statbar' class='infotext'></div>
+        <button onclick='save_project_info("{{filename}}");'>Save changes</button>
+        <button onclick='chart_designer("{{filename}}");'>
+                Goto project chart
+        </button>
+        <div id='prj_statbar' class='infotext'></div>
 </div>

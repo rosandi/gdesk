@@ -1,52 +1,52 @@
 <div class='infotext'>Edit stage: id={{id}}</div>
 <div class='control-group'>
-	<button onclick='save_chart({{boxid}});'>update</button>
-	<button onclick='remove_chart({{boxid}});'>delete</button>
+        <button onclick='save_chart("{{boxid}}");'>update</button>
+        <button onclick='remove_chart("{{boxid}}");'>delete</button>
 </div>
 
 <div class='project_editcard'>
-	<div style='display:flex;gap:10px'>
+        <div style='display:flex;gap:10px'>
 
-	<!-- name -->
-	<div class='input-group'>
-		<label for='chartname'>Stage name</label>
-		<input type='text' id='chartname' {{name}}>
-	</div>
+        <!-- name -->
+        <div class='input-group'>
+                <label for='chartname'>Stage name</label>
+                <input type='text' id='chartname' {{name}}>
+        </div>
 
-	<!-- type -->
-	<div class='input-group'>
-		<label for='chart-type'>Chart type</label>
-		<select id='chart-type' type='text'>
-			<option value='executor'>Executor</option>
-			<option value='validator'>Validator</option>
-			<option value='provider'>Provider</option>
-			<option value='analyst'>Analyst</option>
-		</select>
-	</div>
-	
-	</div>
+        <!-- type -->
+        <div class='input-group'>
+                <label for='chart-type'>Chart type</label>
+                <select id='chart-type' type='text'>
+                        <option value='executor'>Executor</option>
+                        <option value='validator'>Validator</option>
+                        <option value='provider'>Provider</option>
+                        <option value='analyst'>Analyst</option>
+                </select>
+        </div>
+
+        </div>
 
 <div style='display:flex;gap:10px'>
-	<!-- input links -->
-	<div class='input-group'>
-		<label for='chart-in-link'>Input link</label>
-		<select id='chart-in-link' type='text'>
-			<option value='nowhere'>no link</option>
-		</select>
-	</div>
+        <!-- input links -->
+        <div class='input-group'>
+                <label for='chart-in-link'>Input link</label>
+                <select id='chart-in-link' type='text'>
+                        <option value='nowhere'>no link</option>
+                </select>
+        </div>
 
-	<!-- output links -->
-	<div class='input-group'>
-		<label for='chart-out-link'>Output link</label>
-		<select id='chart-out-link' type='text'>
-			<option value='nowhere'>no link</option>
-		</select>
-	</div>
+        <!-- output links -->
+        <div class='input-group'>
+                <label for='chart-out-link'>Output link</label>
+                <select id='chart-out-link' type='text'>
+                        <option value='nowhere'>no link</option>
+                </select>
+        </div>
 </div>
 
-	<div id='chart-type-form'></div>
-	<div>
-		<input type='checkbox' id='chart-act' {{act}}>
-		<label for='chart-act'>active</label>
-	</div>
+        <div id='chart-type-form'></div>
+        <div>
+                <input type='checkbox' id='chart-act' {{act}}>
+                <label for='chart-act'>active</label>
+        </div>
 </div>

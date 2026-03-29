@@ -17,6 +17,8 @@ function remove_chart(id) {
     hideModal()
 }
 
+// FIXME! z-index sorting!
+
 /*****
  * Edit chart and define process to execute
  */
@@ -26,19 +28,18 @@ async function get_subpages() {
         '/subpage?p=chart-executor',
         '/subpage?p=chart-validator',
         '/subpage?p=chart-provider',
-        '/subpage?p=chart-analyst',
-        '/subpage?p=chart-distributor'
+        '/subpage?p=chart-analyst'
     ]
 
     const requests = ct_pages.map(
         url => fetch(url).then(res => res.text())
     );
-    
+
     return await Promise.all(requests);
 }
 
 // find chart, otherwise return -1
-function get_chart_by_id(id){
+function find_chart_by_id(id){
     let cid=null
     for (let i=0; i<project_charts.length; i++) {
         if (project_charts[i].id==id) {
@@ -61,16 +62,17 @@ function find_chart_index(id) {
 }
 
 function save_chart(cid) {
-    console.log(cid)
-    var c=project_charts[cid]
+    var c=find_chart_by_id(cid)
     c.name=getval('chartname')
     c.type=getval('chart-type')
     c.act=getelm('chart-act').checked
     c.execution={}
 
+    //console.log(c)
+
     // FIXME! links
-    c.links['in'].push(getval['chart-in-link'])
-    c.links['out'].push(getval['chart-out-link'])
+    //c.links['in'].push(getval['chart-in-link'])
+    //c.links['out'].push(getval['chart-out-link'])
 
     if(c.type == 'executor') {
         c.execution['type']=getval('chart-exec-type')
@@ -96,10 +98,7 @@ function save_chart(cid) {
         c.execution['script']=getval('chart-anal-script')
       // FIXME: more functions here!
     }
-    else if(c.type == 'distributor') {
-        // FIXME: chart must have many out links here
-    }
-    
+
     draw_chart(c)
     console.log(project_charts)
 }
@@ -134,9 +133,6 @@ function sync_editdata(c) {
         setval('chart-anal-script', c.execution['script'])
       // FIXME: more functions here!
     }
-    else if(c.type == 'distributor') {
-        // FIXME: chart must have many out links here
-    }
 }
 
 // parameter: the charts id, not chart array index!
@@ -148,7 +144,7 @@ function edit_chart(id) {
             break
         }
     }
-    
+
     var c=project_charts[cid]
 
     getText('/subpage?p=edit_chart', (ss)=>{
@@ -159,20 +155,19 @@ function edit_chart(id) {
             act: [c.act, "checked",""],
             name: [
                 c.name=='noname',
-                "placeholder='Enter chart name'", 
+                "placeholder='Enter chart name'",
                 "value='"+c.name+"'"
             ]
         }
-        
+
         ss=text_replace(ss,replacement)
         modalText(ss)
-        
+
         get_subpages().then(data => {
             ct['executor']=data[0]
             ct['validator']=data[1]
             ct['provider']=data[2]
             ct['analyst']=data[3]
-            ct['distributor']=data[4]
 
             if (c.type != '') setText('chart-type-form', ct[c.type])
             exsh=getelm('chart-type')
@@ -180,8 +175,8 @@ function edit_chart(id) {
             exsh.addEventListener('change', (e)=> {
                 setText('chart-type-form', ct[exsh.value])
             })
-            
-            
+
+
             if (c.type == 'provider') {
                 let fu=getelm('chart-prov-upload')
                 fu.addEventListener('change', (ev) => {
@@ -208,19 +203,18 @@ function edit_chart(id) {
         showModal()
         })
     })
-
 }
 
 function change_chart_act(chk, id) {
     //console.log('change:', chk.checked)
-    let c=get_chart_by_id(id)
+    let c=find_chart_by_id(id)
     console.log(c,id,cid)
     c.act=chk.checked
 }
 
 function execute_chart(id) {
      // WARNING! all charts are saved
-     c=get_chart_by_id(id)
+     c=find_chart_by_id(id)
      if (c.name='noname') return
      if (chart_dirty) save_project_charts()
      getJSON("/runchart?p="+project_data.filename+"&c="+id, (out)=>{
@@ -230,9 +224,9 @@ function execute_chart(id) {
 }
 
 function draw_chart(c) {
-    
+
     /* this draws internal of a chart (inside chart-id)
-     * what to show: 
+     * what to show:
      * - name
      * - id
      * - type
@@ -268,10 +262,10 @@ function change_coord(el) {
 function draw_connectors(id, lineto, referse=false) {
     canvas=getelm('parea')
     crec=canvas.getBoundingClientRect()
-    
+    console.log('draw conn:', id, lineto)
     el=getelm(id)
     for (cid in lineto) {
-        
+
         let box=getelm(lineto[cid])
         let lineid1=referse?"conn"+box.id+el.id+"-1":"conn"+el.id+box.id+"-1"
         let lineid2=referse?"conn"+box.id+el.id+"-2":"conn"+el.id+box.id+"-2"
@@ -279,24 +273,24 @@ function draw_connectors(id, lineto, referse=false) {
         let line2=getelm(lineid2)
         let r1 = el.getBoundingClientRect()
         let r2 = box.getBoundingClientRect()
-        
+
         if (referse) {
             const rt=r2;r2=r1;r1=rt
         }
-        
+
         let x1 = r1.left + r1.width / 2 - crec.left
         let y1 = r1.top + r1.height / 2 - crec.top
         let x2 = r2.left + r2.width / 2 - crec.left
         let y2 = r2.top + r2.height / 2 - crec.top
-        
+
         let xm = (x1+x2)/2
         let ym = (y1+y2)/2
-        
- 
+
+
         //console.log('el',el.style.left, el.style.top)
         //console.log('box', box.style.left, box.style.top)
         //console.log(x1, y1, x2, y2)
-        
+
         line1.setAttribute('x1', x1)
         line1.setAttribute('y1', y1)
         line1.setAttribute('x2', xm)
@@ -306,7 +300,7 @@ function draw_connectors(id, lineto, referse=false) {
         line2.setAttribute('y1', ym)
         line2.setAttribute('x2', x2)
         line2.setAttribute('y2', y2)
-    }    
+    }
 }
 
 function prepare_arrows(fro, to) { // fro&to: id
@@ -322,55 +316,61 @@ function prepare_arrows(fro, to) { // fro&to: id
 }
 
 function updateLine(el) {
-    const c=get_chart_by_id(el.id)
+    const c=find_chart_by_id(el.id)
     const to=c.links.out
     const fro=c.links.in
     if (to.length!=0) draw_connectors(el.id, to)
     if (fro.length!=0) draw_connectors(el.id, fro, true)
 }
 
+/***** --> LINK CHARTS
+ * 1. chart-id exists in io/out ==> remove link, remove line element
+ * 2. otherwise ==> add link
+ */
+
 function link_charts(self, to) {
-    let c=get_chart_by_id(self)
-    let d=get_chart_by_id(to)
-    
+    let c=find_chart_by_id(self)
+    let d=find_chart_by_id(to)
+
+    console.log('link called:', self, to)
+
     if (c.links.out.includes(to)) { // to array
         // remove link
         c.links.out.splice(c.links.out.indexOf(to),1)
         d.links.in.splice(c.links.in.indexOf(to),1)
         getelm("conn"+self+to+"-1").remove()
         getelm("conn"+self+to+"-2").remove()
-        
+
     } else if (c.links.in.includes(to)) { // from array
         // remove link
         c.links.in.splice(c.links.in.indexOf(to),1)
         d.links.out.splice(c.links.out.indexOf(to),1)
         getelm("conn"+to+self+"-1").remove()
         getelm("conn"+to+self+"-2").remove()
-        
+
     } else {
+        console.log(`create link: ${self} --> ${to}`, c.links.out)
         c.links.out.push(to)
         d.links.in.push(self)
         prepare_arrows(self,to)
         updateLine(getelm(self))
-    }
-    
-    linkto=null
-    getelm(self).classList.toggle('highlight')
-    for (let i=0; i< project_charts.length; i++) {
-        draggable(getelm(project_charts[i].id))
+        console.log('after link:',c.links.out)
     }
 
+    linkto=null
+    getelm(self).classList.toggle('highlight')
+    refresh_draggable()
 }
 
 function draggable(el) {
     let isDragging = false
     let posx
     let posy
-    
+
     el.onmousedown = (e) => {
         posx=el.style.left
         posy=el.style.top
-        
+
         for (let i=0; i<project_charts.length; i++) {
             getelm(project_charts[i].id).style.zIndex=100;
         }
@@ -389,28 +389,42 @@ function draggable(el) {
         }
 
         document.onmouseup = () => {
-            if (! isDragging) return;
-                isDragging = false
-            
+            if (! isDragging) {
+                return
+            }
+
+            isDragging = false
+
             if(el.style.left==posx && el.style.top==posy) {
+                // select chart
                 if (linkto==null) {
                     el.classList.toggle('highlight')
                     linkto=el.id
                 }
                 else {
+
                     if (linkto != el.id)
                        link_charts(linkto,el.id)
                     else { // cancel
                         el.classList.toggle('highlight')
                         linkto=null
                     }
+
                 }
+                console.log('chart selected', linkto)
 
             } else {
                 change_coord(el)
             }
-            
+
         }
+    }
+}
+
+/* ==> must be called everytime 'parea' is changed */
+function refresh_draggable() {
+    for (let i=0; i< project_charts.length; i++) {
+        draggable(getelm(project_charts[i].id))
     }
 }
 
@@ -421,11 +435,11 @@ function draw_charts(div='parea') {
     nchart=0;
     for (let i=0; i<project_charts.length; i++) {
         let c=project_charts[i]
-        
+
         c.boxid=i // FIXME! maybe not needed!
-        
+
         console.log(c.coord)
-        
+
         ss="<div id='"+c.id+"' class='stage-box' "
         ss+="style='left:"+c.coord[0]+"px;top:"+c.coord[1]+"px;z-index:500'>";
         ss+="</div>"
@@ -433,7 +447,7 @@ function draw_charts(div='parea') {
         draw_chart(c)
         nchart++
     }
-    
+
     for (let i=0; i<project_charts.length; i++) {
         c=project_charts[i]
         for (let n=0; n<c.links.out.length; n++) {
@@ -442,10 +456,7 @@ function draw_charts(div='parea') {
         draw_connectors(c.id, c.links.out)
     }
 
-    for (let i=0; i< project_charts.length; i++) {
-        draggable(getelm(project_charts[i].id))
-    }
-    
+    refresh_draggable()
 }
 
 /***** ADDING NEW CHART
@@ -454,7 +465,7 @@ function draw_charts(div='parea') {
 
 function add_chart(div='parea') {
     // chart base object
-    
+
     let c={
         id:crypto.randomUUID().split('-')[0],
         boxid: nchart,
@@ -464,18 +475,14 @@ function add_chart(div='parea') {
         links: {in: [], out: []},
         act: true
     }
-    
+
     ss="<div id='"+c.id+"' class='stage-box' "
     ss+="style='left:"+c.coord[0]+"px;top:"+c.coord[1]+"px'></div>"
     getelm(div).innerHTML+=ss
     project_charts.push(c)
     draw_chart(c)
     nchart++
-
-    for (let i=0; i< project_charts.length; i++) {
-        draggable(getelm(project_charts[i].id))
-    }
-    
+    refresh_draggable()
 }
 
 function save_project_charts() {
@@ -498,18 +505,18 @@ function chart_designer(pname) {
     //console.log(project_data)
     hideModal()
     if (project_data==null) return
-    
+
     ss="<div class='infotext'>Project: "
     ss+=project_data.name+"</div>"
     ss+="<div class='control-group'>"
     ss+="<button onclick='add_chart();'>create stage</button>"
     ss+="<button onclick='save_project_charts();'>save projects</button>"
     ss+="</div>"
-    ss+=`<svg class='chart-connector'><defs><marker id="arrowhead" 
-    markerWidth="10" markerHeight="7" refX="9" refY="3.5" 
+    ss+=`<svg class='chart-connector'><defs><marker id="arrowhead"
+    markerWidth="10" markerHeight="7" refX="9" refY="3.5"
     orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#3498db" />
     </marker></defs></svg>`
-    ss+="<div id='parea' class='project-area'></div>"  // project area div name: 'parea' 
+    ss+="<div id='parea' class='project-area'></div>"  // project area div name: 'parea'
     setText('prjtable', ss)
 
     getJSON('/project?fetch='+pname, (p)=>{
@@ -535,16 +542,16 @@ function save_project_info(pname) {
         setText('prj_statbar', 'Project info updated')
         listProject('prjtable')
     })
-    
+
 }
 
-/** 
+/**
  * Edit project:
  *   - fetch project from directory (if existed)
- *   - display 
+ *   - display
  *   - edit
  *   - pname --> project file name
- * 
+ *
  * project_data is assigned HERE! -> project info (not the charts)
  */
 
@@ -567,12 +574,12 @@ function edit_project(elm) {
                 note: p[0].note
             }
             ss=text_replace(ss, replacement)
-            showModal(ss)   
+            showModal(ss)
         })
     })
 }
 
-/*** 
+/***
  * used form: projectform
  */
 
@@ -584,6 +591,7 @@ function create_new_project(btn) {
         node: getval('prjnote'),
         status: 'active'
     }
+
     postJSON("/project?create=new", formjs, (p)=>{
         console.log(p)
         btn.style.display='none'
@@ -620,7 +628,7 @@ function listProject(div) {
             }
             ss+="</table>"
         ss+="</div>"
-        
+
         ss+="<div>"
             ss+="<div class='control-group'>"
             ss+="<button onclick='create_project();'>create project</button>"

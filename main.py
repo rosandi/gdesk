@@ -12,12 +12,12 @@ from functools import wraps
 from fabric import Connection
 from werkzeug.utils import secure_filename
 from flask import (
-        Flask, 
-        render_template, 
-        request, 
-        jsonify, 
-        redirect, 
-        url_for, 
+        Flask,
+        render_template,
+        request,
+        jsonify,
+        redirect,
+        url_for,
         session
         )
 
@@ -31,8 +31,8 @@ if apikey==None:
 
 app.secret_key = apikey
 
-##########################6############### 
-#--> read configuration 
+##########################6###############
+#--> read configuration
 
 config_file='/etc/ghpc-config.json'
 userconf='.guriang'
@@ -45,7 +45,7 @@ if not os.path.exists(config_file):
     print('config file not found:', config_file)
     exit()
 
-### ----<< CONFIGURATION FILE >>---- 
+### --> CONFIGURATION FILE <--
 
 print('reading config file:', config_file)
 with open(config_file) as cfl:
@@ -136,12 +136,12 @@ def ssh_savetext(text, file):
         with Connection(host=h,user=u,connect_timeout=10,
                         connect_kwargs={"password": p}) as conn:
             r=conn.put(data, targetfile)
-        
+
         return f'{file} saved'
     except Exception as e:
         print(f'error: {e}')
         return ''
-        
+
 def ssh_putfile(localfile, remotefile):
         token=session['token']
         uc=user_conn[token]
@@ -156,8 +156,8 @@ def ssh_putfile(localfile, remotefile):
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not ('username' in session and 
-                'password' in session and 
+        if not ('username' in session and
+                'password' in session and
                 'token' in session):
             return redirect(url_for('login'))
 
@@ -171,8 +171,8 @@ def login_required(f):
 def api_login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not ('username' in session and 
-                'password' in session and 
+        if not ('username' in session and
+                'password' in session and
                 'token' in session):
 
             return apierr()
@@ -190,9 +190,9 @@ def api_login_required(f):
 @app.route("/")
 @login_required
 def home():
-    
+
     return render_template(
-            'index.html', 
+            'index.html',
             man_name=cfg['manager'],
             man_email=cfg['mail'],
             username=session["username"]
@@ -212,7 +212,7 @@ def login():
     ### do LOGIN process
     #   on success set SESSION
     #   otherwise goback ro login_form
-    
+
     username=request.form.get("username")
     password=request.form.get("password")
     try:
@@ -231,7 +231,7 @@ def login():
             session["username"]=username
             session["password"]=password
             session['token']=token
-            
+
             user_conn[token]= {
                 'home': hm,
                 'host': hpchost,
@@ -310,9 +310,9 @@ def get_user_info():
 def save_user_info():
     ## DEBUGGING
     uin=request.get_json()
-    if not uin: 
+    if not uin:
         return apierr("update failed")
-    
+
     err=ssh_savetext(json.dumps(uin), userconf+'/user.json')
     print(err);
     return get_user_info()
@@ -351,7 +351,7 @@ def get_nodes_info():
     nrec={}
     nodename=''
     for nline in qs:
-        
+
         nline=nline.strip()
         if nline=='': continue
 
@@ -361,7 +361,7 @@ def get_nodes_info():
                 nrec={}
             sn=nline.split()
             nodename=sn[0].replace('NodeName=','')
-        
+
         fld=nline.split('=')[0]
         nrec[fld]=nline
 
@@ -432,9 +432,9 @@ def project_chart_filename(pfile):
     ujs=json.loads(ssh_gettext(ufile))
     pjs=json.loads(ssh_gettext(cfile))
     return f"{ujs['directory']}/{pjs['wdir']}/project.json"
-    
-def edit_projectinfo(pname,pdata):
-    cfile=project_chart_filename(pname)
+
+def edit_projectinfo(pfile,pdata):
+    cfile=f'{userconf}/projects/{pfile}'
     pjs=json.loads(ssh_gettext(cfile))
     for key in pdata:
         pjs[key]=pdata[key]
@@ -454,15 +454,17 @@ def create_newproject(pdata):
     dt+=session['token']
     try:
         project_filename=f'{userconf}/projects/gprj-{dt}.json'
+        if pdata['wdir'].strip() == '': pdata['wdir']=secrets.token_hex(8)
+        if pdata['name'].strip() == '': pdata['name']=pdata['wdir']
         ssh_savetext(json.dumps(pdata), project_filename)
         uinfo=json.loads(ssh_gettext(userconf+'/user.json'))
-        
+
         # 1. create directories
         ssh(f'mkdir -p {uinfo['directory']}/{pdata['wdir']}/in')
         ssh(f'mkdir -p {uinfo['directory']}/{pdata['wdir']}/out')
         ssh(f'mkdir -p {uinfo['directory']}/{pdata['wdir']}/scr')
         ssh(f'mkdir -p {uinfo['directory']}/{pdata['wdir']}/tmp')
-        
+
         # 2. prepare files
         scrpath=f'{uinfo['directory']}/{pdata['wdir']}/scr'
         ssh_putfile('scr/run-bash', scrpath)
@@ -473,14 +475,14 @@ def create_newproject(pdata):
         print('error: project not created')
 
 
-@app.route('/project', methods=["GET", "POST"]) 
+@app.route('/project', methods=["GET", "POST"])
 @api_login_required
 def project():
     # this function deals with: userconf/projects/*
     # uri format: project?list=all, project?list=project_name
 
     prj=request.args.get('list')
-    if prj: 
+    if prj:
         return jsonify(list_project(prj))
 
     prj=request.args.get('create')
@@ -520,12 +522,12 @@ def run_provider(c, wdir):
 
     for d in os.listdir(f'tmp/{session['token']}'):
         ssh_putfile(f'tmp/{session['token']}/{d}', f'{wdir}/in')
-    
+
     ssh(f'rm tmp/{session['token']}')
     scrprov=f'{wdir}/scr/run-provider'
     scrpath=f'{wdir}/tmp/{c['id']}.lst'
     ssh_savetext(c['execution']['script'], scrpath)
-    out=ssh_raw(f'{scrprov} {scrpath}')    
+    out=ssh_raw(f'{scrprov} {scrpath}')
     infilelist=ssh(f'ls -1 {wdir}/in')
     return {'input': infilelist}
 
@@ -533,7 +535,7 @@ def run_provider(c, wdir):
 def run_executor(c, wdir):
 
     ty=c['execution']['type']
-    
+
     if ty == 'script':
         runner=f'{wdir}/scr/run-bash'
         scrpath=f'{wdir}/tmp/{c['id']}.sh'
@@ -557,26 +559,26 @@ def execute_chart(p,cid):
         if chart['id'] == cid:
             thechart=chart
             break
-    
-    if not thechart:return 
-    
+
+    if not thechart:return
+
     if thechart['type'] == 'provider':
         return jsonify(run_provider(thechart, wdir))
 
     elif thechart['type'] == 'executor':
         return jsonify(run_executor(thechart, wdir))
 
-    
+
     elif thechart['type'] == 'validator':
         pass
-        
+
     elif thechart['type'] == 'analyst':
         pass
-    
+
     return {'output': 'not implemented', 'status': True}
 
 
-@app.route('/runchart') 
+@app.route('/runchart')
 @api_login_required
 def runchart():
     p=request.args.get('p')
@@ -587,7 +589,7 @@ def runchart():
 def provider_upload_files():
     # Use getlist to catch all files sent under the 'files[]' key
     files = request.files.getlist('files[]')
-    
+
     if not files or files[0].filename == '':
         return "No files selected", 400
 
