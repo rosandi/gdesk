@@ -262,7 +262,7 @@ function change_coord(el) {
 function draw_connectors(id, lineto, referse=false) {
     canvas=getelm('parea')
     crec=canvas.getBoundingClientRect()
-    console.log('draw conn:', id, lineto)
+    // console.log('draw conn:', id, lineto)
     el=getelm(id)
     for (cid in lineto) {
 
@@ -332,7 +332,7 @@ function link_charts(self, to) {
     let c=find_chart_by_id(self)
     let d=find_chart_by_id(to)
 
-    console.log('link called:', self, to)
+    // console.log('link called:', self, to)
 
     if (c.links.out.includes(to)) { // to array
         // remove link
@@ -354,7 +354,7 @@ function link_charts(self, to) {
         d.links.in.push(self)
         prepare_arrows(self,to)
         updateLine(getelm(self))
-        console.log('after link:',c.links.out)
+        // console.log('after link:',c.links.out)
     }
 
     linkto=null
@@ -424,6 +424,7 @@ function draggable(el) {
 /* ==> must be called everytime 'parea' is changed */
 function refresh_draggable() {
     for (let i=0; i< project_charts.length; i++) {
+        // console.log(project_charts)
         draggable(getelm(project_charts[i].id))
     }
 }
@@ -519,6 +520,10 @@ function chart_designer(pname) {
     ss+="<div id='parea' class='project-area'></div>"  // project area div name: 'parea'
     setText('prjtable', ss)
 
+    // FIXME clear charts!
+    // load from browser memory would be nice!
+
+    project_charts=[]
     getJSON('/project?fetch='+pname, (p)=>{
         if (p.length > 0) {
             project_charts=p
