@@ -156,12 +156,12 @@ function uploadFiles(
     }
 
     if(statusbar!='') {
-        const status = document.getElementById(statusbar);
+        const status = document.getElementById(statusbar)
         xhr.onload = function() {
             if (xhr.status === 200) {
-                status.innerText = "ok:" + xhr.responseText;
+                status.innerText = xhr.responseText
             } else {
-                status.innerText = "error:";
+                status.innerText = "error: "+xhr.responseText
             }
         }
     }
@@ -237,6 +237,9 @@ function hideModal() {
     getelm("myModal").style.display="none";
 }
 
+function getModalContent() {
+    return getelm('dlgContent').innerHTML
+}
 
 // text replacement with variable
 // rep is an object, {key:value, ...}

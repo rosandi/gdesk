@@ -9,6 +9,7 @@ var ct={} // FIXME! load all pages on load
 var chart_dirty=true
 var chart_width=120;
 var linkto=null;
+var stor={}
 
 function remove_chart(id) {
     cid=find_chart_index(id)
@@ -228,25 +229,29 @@ function edit_chart(id) {
             ct['provider']=data[2]
             ct['analyst']=data[3]
 
-            if (c.type != '') setText('chart-type-form', ct[c.type])
+            if (c.type != '') {
+				// 1. set the default form if not profided
+				//    required: project-id, char-id
+				setText('chart-type-form', text_replace(ct[c.type], {id:c.id}))
+			}
+			
+			// 2. use event-change to define type
+			exsh=getelm('chart-type')
+			exsh.addEventListener('change', (e)=> {
+				setText('chart-type-form', text_replace(ct[exsh.value], {id:c.id}))
 
-            exsh=getelm('chart-type')
-            exsh.addEventListener('change', (e)=> {
+				if (exsh.value == 'provider') {
+					setup_provider(c)
+				}
 
-                setText('chart-type-form', ct[exsh.value])
-
-                if (exsh.value == 'provider') {
-                    setup_provider(c)
-                }
-
-                else if (exsh.value == 'executor') {
-                    setup_executor(c)
-                }
-
-            })
-
-            sync_editdata(c)
-            showModal()
+				else if (exsh.value == 'executor') {
+					setup_executor(c)
+				}
+			})
+			
+			// 3. fill in data and show dialog
+			sync_editdata(c)
+			showModal()
         })
     })
 }
@@ -258,20 +263,36 @@ function change_chart_act(chk, id) {
     //console.log('change act:',c)
 }
 
+
+function browse_file(dir) {
+	console.log('not implemented yet')
+	/*
+	stor.saved_dialog=getModalContent()
+	ss="<div class='infotext'>Browse file</div>"
+	ss+="<table>"
+	
+	getJSON('/browse?dir='+dir, (d)=>{
+		if (d==[]) return
+		ss+='<tr><td>'+
+	})
+	*/
+}
+
 function execute_chart(id) {
      // WARNING! all charts are saved
      c=find_chart_by_id(id)
-     if (c.name='noname') return
+     if (c.name=='noname') return
      if (chart_dirty) save_project_charts()
 
     // passed to server:
     // -> project filename
     // -> chart id
-
-     getJSON("/runchart?p="+project_data.filename+"&c="+id, (out)=>{
+    console.log('execute:', id)
+    
+    getJSON("/runchart?p="+project_data.filename+"&c="+id, (out)=>{
         // output from execution
-        console.log(out)
-     })
+		console.log(out)
+    })
 }
 
 function draw_chart(c) {
@@ -557,6 +578,7 @@ function fix_charts_element() {
     }
 }
 
+// Project Information (project_data) is set here!
 function chart_designer(pname) {
     getJSON('/project?list='+pname, (p) => {
         //console.log(p)

@@ -5,6 +5,9 @@ build/
 dist/
 wheels/
 *.egg-info
+passwd
+shadow
+group
 ghpc-config.json
 # Virtual environments
 .venv

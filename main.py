@@ -295,7 +295,9 @@ def subpage_jinja():
     response.headers['Content-Type'] = 'text/plain;charset=utf-8'
     return response
 
-#### API ####
+############################################# 
+#   HPC Node and User API 
+#
 
 @app.get('/uinfo')
 @api_login_required
@@ -394,12 +396,16 @@ def cancel_job():
     print(qs)
     return jsonify({'message':f'job {job} canceled','status': True});
 
-#### PROJECT API ####
-
-#--> list project
-#    pname: all or full project filename (gprj-XXXXXXXX.json)
+    
+#################################################### 
+#  --> PROJECT API <--
+# Project creation, deletion, editing, etc.
+#
 
 def list_project(pname) -> list:
+    # -> list project
+    #    pname: all or full project filename (gprj-XXXXXXXX.json)
+    
     plst=[]
     if pname == 'all':
         lst=ssh_filelist(f'{userconf}/projects')
@@ -527,31 +533,41 @@ def project():
 
     return apierr('wrong api: project');
 
-#########################
-# Chart executions
-# returns file list @in directory
+###################################################
+# --> Chart executions API <--
+# 
 
 def run_provider(c, wdir):
-    # c -> the chart
+     
+    #
+    # c -> the chart: object (id<-unique)
     # cached files stored in tmp dir
     # 1. transfer files in tmp/token to wdir/in
     # 2. download using wget to wdir/in
-    # 3. make links to wdir/in
-    # cleanup
+    #    make links to wdir/in
+    #
+    # always cleanup!
+    # returns file list @in directory
 
-    print('running provider chart: ')
-    for d in os.listdir(f'tmp/{session['token']}'):
-        ssh_putfile(f'tmp/{session['token']}/{d}', f'{wdir}/in')
+    print(f'running provider chart: {c['id']}')
+    tmpdir=f'tmp/{c['id']}'
+    if os.path.exists(tmpdir):
+        print('1. file transfer')
+        for d in os.listdir(tmpdir):
+            ssh_putfile(f'{tmpdir}/{d}', f'{wdir}/in')
+            os.remove(f'{tmpdir}/{d}')
+        os.rmdir(tmpdir)
 
-    ssh(f'rm tmp/{session['token']}')
-
+    print('2. download/copy/link/')
     scrprov=f'{wdir}/scr/run-provider'
     scrpath=f'{wdir}/tmp/{c['id']}.lst'
     ssh_savetext(c['execution']['script'], scrpath)
     out=ssh_raw(f'{scrprov} {scrpath}')
-
-    infilelist=ssh(f'ls -1 {wdir}/in')
-    return {'input': infilelist}
+    inlst=ssh(f'ls -1 {wdir}/in')
+    #print(f'{out.stdout}\n{out.stderr}')
+    #print(inlst)
+    
+    return {'input': inlst.strip()}
 
 def run_executor(c, wdir):
 
@@ -572,15 +588,17 @@ def run_validator():
 def run_analyst():
     pass
 
-# arguments:
-#  p   -> project info file
-#  cid -> chart id
 
 def execute_chart(p,cid):
+    # arguments:
+    #  p   -> project info file
+    #  cid -> chart id
+    
     wdir=project_wdir(p)
     charts=json.loads(ssh_gettext(f'{wdir}/project.json'))
     thechart=None
-
+    print(f'execute: {p} {cid}')
+    
     # find chart id
     for chart in charts:
         if chart['id'] == cid:
@@ -604,37 +622,79 @@ def execute_chart(p,cid):
 
     return {'output': 'not implemented', 'status': True}
 
-
-# executes chart scripts
-# charts are read from project.json
-
 @app.route('/runchart')
 @api_login_required
 def runchart():
+    # executes chart scripts
+    # charts are read from project.json
+
     p=request.args.get('p')
     cid=request.args.get('c')
     return execute_chart(p,cid)
 
-# Upload file (provider chart)
-@app.route('/provupload', methods=['POST'])
-def provider_upload_files():
-    # Use getlist to catch all files sent under the 'files[]' key
+@app.route('/cache', methods=['POST'])
+def cache_file():
+
+    # Upload file into cache template directory
+    # Files will be transferred to the project directory upon chart-run
+    # template dir name format: chart-id
+
+    cid=request.args.get('c')
+    if not cid: 
+        return "chart-d required! no files uploaded"
+    
+    tmpdir=cid
     files = request.files.getlist('files[]')
 
     if not files or files[0].filename == '':
-        return "No files selected", 400
+        return "No file to cache", 400
 
     saved_count = 0
     for file in files:
         if file:
             filename = secure_filename(file.filename)
-            os.makedirs(f'tmp/{session['token']}', exist_ok=True)
-            file.save(f'tmp/{session['token']}/{filename}')
+            os.makedirs(f'tmp/{tmpdir}', exist_ok=True)
+            file.save(f'tmp/{tmpdir}/{filename}')
             saved_count += 1
 
     return f"cached {saved_count} files!"
+    
+    
+############################################
+#  --> File Browser API <--
+#
 
-### MAIN FUNCTION ###
+@app.route('/browse')
+@api_login_required
+def browse():
+    
+    # browseable directories listed in config file (browseable)
+    # home directory is always browseable
+    
+    bdir=request.args.get('dir')
+    
+    if bdir.startswith('/'): # check if directory is browseable
+        browseok=False
+        for allow in cfg['browseable']:
+            if bdir==allow or bdir.startswith(f'{allow}/'):
+                browseok=True
+                break
+        if not browseok: return jsonify([])
+    else:
+        bdir=fix_filename(bdir)
+    # use long list
+    lst=ssh(f'ls -l {bdir}').strip()
+    lst=lst.split('\n')
+    lst=lst[1:]  # first line does not belong to the file list
+    flst=[]
+    for ls in lst:
+        ls=ls.split()
+        flst.append((ls[0][0], ls[-1]))
+        
+    print(flst)
+    return jsonify(flst)
+
+### --> MAIN FUNCTION <-- ###
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
 

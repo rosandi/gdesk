@@ -8,7 +8,7 @@
             <button
                 onclick='
                     uploadFiles(
-                    "/provupload",
+                    "/cache?c={{id}}",
                     "chart-prov-upload",
                     "chart-prov-pbar",
                     "chart-prov-pct",
@@ -28,7 +28,9 @@
             <input type='text' id='chart-prov-download'>
         </div>
         <div class='input-group'>
-            <button id='chart-prov-link'>Link file</button>
+            <button id='chart-prov-link' onclick='browse_file()'>
+                Copy/Link file
+            </button>
         </div>
     </div>
 <div style='flex:1 1 100%'>

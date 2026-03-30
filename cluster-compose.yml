@@ -10,6 +10,9 @@ services:
     volumes:
       - slurmstate:/var/slurm
       - gshare:/home
+      - ./passwd:/etc/passwd
+      - ./group:/etc/group
+      - ./shadow:/etc/shadow
       - ./:/opt/gdesk
       - ./ghpc-config.json:/etc/ghpc-config.json
 
@@ -20,6 +23,9 @@ services:
     networks: 
       - guriang
     volumes:
+      - ./passwd:/etc/passwd
+      - ./group:/etc/group
+      - ./shadow:/etc/shadow
       - gshare:/home
 
   node02:
@@ -29,6 +35,9 @@ services:
     networks: 
       - guriang
     volumes:
+      - ./passwd:/etc/passwd
+      - ./group:/etc/group
+      - ./shadow:/etc/shadow
       - gshare:/home
 
   node03:
@@ -38,6 +47,9 @@ services:
     networks: 
       - guriang
     volumes:
+      - ./passwd:/etc/passwd
+      - ./group:/etc/group
+      - ./shadow:/etc/shadow
       - gshare:/home
 
   node04:
@@ -47,6 +59,9 @@ services:
     networks: 
       - guriang
     volumes:
+      - ./passwd:/etc/passwd
+      - ./group:/etc/group
+      - ./shadow:/etc/shadow
       - gshare:/home
 
 volumes:
