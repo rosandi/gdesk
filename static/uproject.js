@@ -9,7 +9,8 @@ var ct={} // FIXME! load all pages on load
 var chart_dirty=true
 var chart_width=120;
 var linkto=null;
-var stor={}
+var stor=[]
+var select=[]
 
 function remove_chart(id) {
     cid=find_chart_index(id)
@@ -196,7 +197,10 @@ function setup_executor(c) {
 
 
 // parameter: the charts id, not chart array index!
+// WARNING! select array is cleared here
+
 function edit_chart(id) {
+    select=[]
     var cid=0
     for(var i=0;i<project_charts.length;i++) {
         if (project_charts[i].id == id) {
@@ -263,32 +267,98 @@ function change_chart_act(chk, id) {
     //console.log('change act:',c)
 }
 
-
 function update_filebrowser(dir) {
-	getJSON('/browse?dir='+dir, (lst)=>{
-		if (lst==[]) return
-        for(let d in lst) {
-            
-            if(d[0]=='d') // directory
-                ss+='<tr><td><span>d</span>'+d[1]+'</td></tr>'
-            else
-                ss+='<tr><td>'+d[1]+'</td></tr>'
-        }
+    stor.push(getModalContent())
+    getJSON('/browse?dir='+dir, (lst)=>{
+        console.log(lst)
+        let ss="<div class='control-group' style='height:20px;padding:20px'>"
+        ss+="<div class='infotext'>Browse file: "+dir+"</div>"
+        ss+="<button onclick='browse_back()'>back</button>"
+        ss+="</div>"
+        ss+="<div style='display:flex;gap:20px;flex-direction:column;align-contents:center:overflow:auto'>"
+        ss+="<div><table id='filebrowser' style='width:400px'>"
+        
+        lst.forEach((d) => {
+            if(d[0]=='d') { // directory
+                ss+='<tr class="dynrow" onclick="follow_path(\''+dir+'\',this)">'
+                ss+='<td><div style="display:flex;align-items:center">'
+                ss+='<img src="icons?icon=folder" width="16" height="16">'
+                ss+='<span style="margin-left:20px">'+d[1]+'</span>'
+                ss+='</div></td></tr>'
+            } else {
+                ss+='<tr class="dynrow" onclick="select_file(\''+dir+'\',this)">'
+                ss+='<td><div style="display:flex;align-items:center">'
+                ss+='<img src="icons?icon=file" width="16" height="16">'
+                ss+='<span style="margin-left:20px">'+d[1]+'</span>'
+                ss+='</div></td></tr>'
+            }
+        })
+        
+        ss+="</table></div>"
+        
+        ss+="<div><div class='infotext'>Selected files</div>"
+        ss+="<div id='fileselect'></div>"
+        ss+="</div>"
+        
+        modalText(ss)
+        update_selection()
 	})
+}
+
+function follow_path(dir,frow) {
+    fname=frow.innerText
+    update_filebrowser(dir+'/'+fname)
+}
+
+function update_selection() {
+    ss="<table style='width:500px;margin-left:auto;margin-right:auto'>"
+    select.forEach((d) => {
+        ss+='<tr class="dynrow">'
+        ss+='<td style="width:20px">'
+        ss+='<img src="icons?icon=unselect" width="16" height="16" onclick="unselect_file(\''+d[1]+'\')">'
+        ss+='</td><td><span style="margin-left:20px;margin-right:20px">'+d[1]+'</span>'
+        ss+='</td><td style="width:60px"><input type="checkbox" name="copylink" '+(d[0]?'checked>':'>')+'link'
+        ss+='</td>'
+        ss+='</tr>'
+    })
+    ss+="</table>"
+    getelm('fileselect').innerHTML=ss
+}
+
+function select_file(dir,frow) {
+    fname=frow.innerText
+    select.push([true, dir+'/'+fname]) // [islink, file_path]
+    update_selection()
+}
+
+function unselect_file(fname) {
+    console.log('deselect:',fname)
+    rmidx=0
+    for(let i=0;i<select.length;i++) {
+        if (select[i][1]==fname) {
+            rmidx=i
+            break
+        }
+    }
+    select.splice(rmidx,1)
+    update_selection()
+}
+
+function browse_back() {
+    modalText(stor.pop())
+    if (stor.length) update_selection()
+    else {
+        // FIXME: must be usable by other charts!!!!
+        getelm('chart-prov-script').value=select.join('\n')
+    }
 }
 
 function browse_file() {
     //file browser
 	//console.log('not implemented yet')
-	stor.saved_dialog=getModalContent()
-    let ss="<div class='infotext'>Browse file</div>"
-    ss+="<div style='overflow:auto'>"
-    ss+="<table id='filebrowser'>"
-    ss+="</table></div>"
-    showModal(ss)
+	stor=[]
     update_filebrowser('.')
 }
-
 
 function execute_chart(id) {
      // WARNING! all charts are saved
@@ -318,7 +388,7 @@ function draw_chart(c) {
      * - buttons: edit
      */
     //console.log(c.act)
-    ss="<div class='chart-group'>"
+    let ss="<div class='chart-group'>"
     ss+="<div>"+c.name+"<br>"+c.id+"</div>"
     ss+="<div style='display:flex;gap:5px;margin-left:auto;margin-right:auto'>"
     ss+=c.type+"</div>"
@@ -387,7 +457,7 @@ function draw_connectors(id, lineto, referse=false) {
 }
 
 function prepare_arrows(fro, to) { // fro&to: id
-    ss="<svg class='chart-connector'>"
+    let ss="<svg class='chart-connector'>"
     ss+="<line id='conn"+fro+to+"-1' "
     ss+="x1='0' y1='0' x2='0' y2='0' "
     ss+="stroke='#3498db' stroke-width='2' marker-end='url(#arrowhead)'/>"
@@ -528,7 +598,7 @@ function draw_charts(div='parea') {
 
         console.log(c.coord)
 
-        ss="<div id='"+c.id+"' class='stage-box' "
+        let ss="<div id='"+c.id+"' class='stage-box' "
         ss+="style='left:"+c.coord[0]+"px;top:"+c.coord[1]+"px;z-index:500'>";
         ss+="</div>"
         getelm(div).innerHTML+=ss
@@ -565,7 +635,7 @@ function add_chart(div='parea') {
         status: true  // hold the last execution status
     }
 
-    ss="<div id='"+c.id+"' class='stage-box' "
+    let ss="<div id='"+c.id+"' class='stage-box' "
     ss+="style='left:"+c.coord[0]+"px;top:"+c.coord[1]+"px'></div>"
     getelm(div).innerHTML+=ss
     project_charts.push(c)
@@ -599,7 +669,7 @@ function chart_designer(pname) {
         hideModal()
         if (project_data==null) return
 
-        ss="<div class='infotext'>Project: "
+        let ss="<div class='infotext'>Project: "
         ss+=project_data.name+"</div>"
         ss+="<div class='control-group'>"
         ss+="<button onclick='add_chart();'>create stage</button>"

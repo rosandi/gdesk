@@ -15,6 +15,7 @@ from flask import (
         Flask,
         render_template,
         request,
+        send_file,
         jsonify,
         redirect,
         url_for,
@@ -633,6 +634,7 @@ def runchart():
     return execute_chart(p,cid)
 
 @app.route('/cache', methods=['POST'])
+@api_login_required
 def cache_file():
 
     # Upload file into cache template directory
@@ -658,7 +660,14 @@ def cache_file():
             saved_count += 1
 
     return f"cached {saved_count} files!"
-    
+
+@app.route('/icons')
+def icons():
+    ifile=request.args.get('icon')
+    if os.path.exists(f'icons/{ifile}.png'):
+        return send_file(f'icons/{ifile}.png', mimetype='image/png')
+        
+    return send_file(f'icons/unknown.png')
     
 ############################################
 #  --> File Browser API <--
