@@ -264,19 +264,31 @@ function change_chart_act(chk, id) {
 }
 
 
-function browse_file(dir) {
-	console.log('not implemented yet')
-	/*
-	stor.saved_dialog=getModalContent()
-	ss="<div class='infotext'>Browse file</div>"
-	ss+="<table>"
-	
-	getJSON('/browse?dir='+dir, (d)=>{
-		if (d==[]) return
-		ss+='<tr><td>'+
+function update_filebrowser(dir) {
+	getJSON('/browse?dir='+dir, (lst)=>{
+		if (lst==[]) return
+        for(let d in lst) {
+            
+            if(d[0]=='d') // directory
+                ss+='<tr><td><span>d</span>'+d[1]+'</td></tr>'
+            else
+                ss+='<tr><td>'+d[1]+'</td></tr>'
+        }
 	})
-	*/
 }
+
+function browse_file() {
+    //file browser
+	//console.log('not implemented yet')
+	stor.saved_dialog=getModalContent()
+    let ss="<div class='infotext'>Browse file</div>"
+    ss+="<div style='overflow:auto'>"
+    ss+="<table id='filebrowser'>"
+    ss+="</table></div>"
+    showModal(ss)
+    update_filebrowser('.')
+}
+
 
 function execute_chart(id) {
      // WARNING! all charts are saved
