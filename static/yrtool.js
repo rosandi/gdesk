@@ -79,7 +79,11 @@ function checked(elid) {
     return document.getElementById(elid).checked;
 }
 
-function setText(id, text) {
+function settext(id, text) {
+    document.getElementById(id).innerHTML=text;
+}
+    
+function setText(id, text) { // WARNING: Obsolete!
     document.getElementById(id).innerHTML=text;
 }
 
@@ -87,7 +91,11 @@ function appendtext(id, text) {
     document.getElementById(id).innerHTML+=text;
 }
 
-function getContent(id) {
+function getcontent(id){
+    return document.getElementById(id).textContent;
+}
+
+function getContent(id) { // WARNING: Obsolete
     return document.getElementById(id).textContent;
 }
 
@@ -259,4 +267,3 @@ function text_replace(txt, rep) {
     });
     return txt;
 }
-

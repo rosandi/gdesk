@@ -13,23 +13,104 @@ var stor=[]
 var select=[]
 
 var chart_content=`
+<div id='{{id}}' class='stage-box' style='left:{{posx}}px;top:{{posy}}px'>
 <div class='chart-group'>
 <div>{{name}}<br>{{id}}</div>
 <div style='display:flex;gap:5px;margin-left:auto;margin-right:auto'>
 {{type}}</div>
-<div><input type='checkbox' onclick='change_chart_act(this,\""+c.id+"\")' {{checked}}>
+<div><input type='checkbox' 
+onclick='change_chart_act(this,"{{id}}")' {{checked}}>
 <span style='margin-bottom:5px'>bypass</span></div>
 <div style='display:flex;gap:5px;margin-left:auto;margin-right:auto'>
 <button onclick='edit_chart("{{id}}")'>edit</button>
 <button onclick='execute_chart("{{id}}")'>run</button>
-</div></div>
+</div>
+</div>
+</div>
 `
 
-class stageChart {
-    constructor(htcontent,chart_type) {
-        
+class Chart {
+    name: "noname"
+    dirty=true
+    coord=[0, 0]
+    inlinks=[]
+    outlinks=[]
+    bypass=false 
+    status=true 
+    drawn=false
+    
+    constructor(_content,_type,_div,) {
+        this.id=crypto.randomUUID().split('-')[0]
+        this.content=_content
+        this.div=_div
+        this.type=_type
     }
-}
+    
+    draw(div) {
+        let area=getelm(div)
+        let htvars={
+            posx:0,
+            posy:0,
+            name:this.name,
+            id:this.id;
+            checked:(bypass?'checked':''
+        }
+        area.innerHTML+=text_replace(this.content,htvars)
+        this.element=getelm(this.id)
+        this.element.style.zIndex=100
+        drawn=true
+    }
+    
+    change_coord(el) {
+        let left=el.style.left.replace('px','')
+        let top=el.style.top.replace('px','')
+        left=parseInt(left, 10)
+        top=parseInt(top, 10)
+        coord[0]=left
+        coord[1]=top
+    }
+    
+    draggable() {
+        if (!this.drawn) return
+        this.isDragging = false
+        let el=this.element
+        el.onmousedown = (e) => {
+            tag=e.target.tagName
+            if (tag == 'BUTTON' || tag=='INPUT') return
+            let posx=el.style.left
+            let posy=el.style.top
+            isDragging = true
+            const offsetX = e.clientX - el.offsetLeft
+            const offsetY = e.clientY - el.offsetTop
+            
+            area.onmousemove = (e) => {
+              if (!isDragging) return
+              el.style.left = (e.clientX - offsetX) + 'px'
+              el.style.top = (e.clientY - offsetY) + 'px'
+              updateLine(el); // Update the line while dragging
+            }
+
+            area.onmouseup = () => {
+                if (! isDragging) return
+                isDragging = false
+                if(el.style.left==posx && el.style.top==posy) {
+                    if (linkto==null) { // select
+                        el.classList.toggle('highlight')
+                        linkto=el.id
+                    } else {
+                        if (linkto != el.id) link_charts(linkto,el.id)
+                        else { // cancel
+                            el.classList.toggle('highlight')
+                            linkto=null
+                        }
+                    }
+                } 
+                else this.change_coord(el)
+            }
+        }
+    }
+
+} //--> class Chart
 
 function remove_chart(id) {
     cid=find_chart_index(id)
@@ -40,7 +121,7 @@ function remove_chart(id) {
 
 // FIXME! z-index sorting!
 
-/*****
+/******************************************
  * Edit chart and define process to execute
  */
 
@@ -436,15 +517,7 @@ function draw_chart(c) {
     setText(c.id,ss)
 }
 
-function change_coord(el) {
-    let left=el.style.left.replace('px','')
-    let top=el.style.top.replace('px','')
-    left=parseInt(left, 10)
-    top=parseInt(top, 10)
-    let c=find_chart_index(el.id)
-    project_charts[c].coord[0]=left
-    project_charts[c].coord[1]=top
-}
+
 
 function draw_connectors(id, lineto, referse=false) {
     canvas=getelm('parea')
@@ -547,77 +620,6 @@ function link_charts(self, to) {
     linkto=null
     getelm(self).classList.toggle('highlight')
     refresh_draggable()
-}
-
-function draggable(el) {
-    let isDragging = false
-    let posx
-    let posy
-    let parea=getelm('parea')
-
-    el.onmousedown = (e) => {
-        tag=e.target.tagName
-        if (tag == 'BUTTON' || tag=='INPUT') return
-
-        posx=el.style.left
-        posy=el.style.top
-
-        for (let i=0; i<project_charts.length; i++) {
-            getelm(project_charts[i].id).style.zIndex=100;
-        }
-
-        el.style.zIndex=500
-
-        isDragging = true
-        const offsetX = e.clientX - el.offsetLeft
-        const offsetY = e.clientY - el.offsetTop
-
-        parea.onmousemove = (e) => {
-          if (!isDragging) return
-          el.style.left = (e.clientX - offsetX) + 'px'
-          el.style.top = (e.clientY - offsetY) + 'px'
-          updateLine(el); // Update the line while dragging
-        }
-
-        parea.onmouseup = () => {
-            if (! isDragging) {
-                return
-            }
-
-            isDragging = false
-
-            if(el.style.left==posx && el.style.top==posy) {
-                // select chart
-                if (linkto==null) {
-                    el.classList.toggle('highlight')
-                    linkto=el.id
-                }
-                else {
-
-                    if (linkto != el.id)
-                       link_charts(linkto,el.id)
-                    else { // cancel
-                        el.classList.toggle('highlight')
-                        linkto=null
-                    }
-
-                }
-                // console.log('chart selected', linkto)
-
-            } else {
-                change_coord(el)
-            }
-
-        }
-    }
-}
-
-/* ==> must be called everytime 'parea' is changed */
-function refresh_draggable() {
-    for (let i=0; i< project_charts.length; i++) {
-        // console.log(project_charts)
-        draggable(getelm(project_charts[i].id))
-    }
 }
 
 // Check number of charts
