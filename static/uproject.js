@@ -70,6 +70,7 @@ function save_chart(cid) {
     c.act=!getelm('chart-bypass').checked
     c.execution={}
     console.log('save chart:',c)
+    setText('chart-status', 'chart updated')
 
     // FIXME! links
     //c.links['in'].push(getval['chart-in-link'])
@@ -312,17 +313,25 @@ function follow_path(dir,frow) {
 
 function update_selection() {
     ss="<table style='width:500px;margin-left:auto;margin-right:auto'>"
-    select.forEach((d) => {
+    for (let i=0;i<select.length; i++) {
+        d=select[i]
         ss+='<tr class="dynrow">'
         ss+='<td style="width:20px">'
         ss+='<img src="icons?icon=unselect" width="16" height="16" onclick="unselect_file(\''+d[1]+'\')">'
         ss+='</td><td><span style="margin-left:20px;margin-right:20px">'+d[1]+'</span>'
-        ss+='</td><td style="width:60px"><input type="checkbox" name="copylink" '+(d[0]?'checked>':'>')+'link'
+        ss+='</td><td style="width:60px"><input type="checkbox" '
+        ss+='onclick="check_link(this,'+i.toString()+')" '
+        ss+=(d[0]?'checked>':'>')+'link'
         ss+='</td>'
         ss+='</tr>'
-    })
+    }
     ss+="</table>"
     getelm('fileselect').innerHTML=ss
+}
+
+function check_link(cb, si) {
+    console.log('check:',cb.checked)
+    select[si][0]=cb.checked
 }
 
 function select_file(dir,frow) {
@@ -349,7 +358,13 @@ function browse_back() {
     if (stor.length) update_selection()
     else {
         // FIXME: must be usable by other charts!!!!
-        getelm('chart-prov-script').value=select.join('\n')
+        listentry=[]
+        select.forEach((d)=>{
+            if (d[0]) listentry.push('link:'+d[1])
+            else listentry.push('copy:'+d[1])
+        })
+        getelm('chart-prov-script').value=listentry.join('\n')
+        getelm('chart-type').value='provider'
     }
 }
 

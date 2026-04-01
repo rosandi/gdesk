@@ -549,7 +549,10 @@ def run_provider(c, wdir):
     #
     # always cleanup!
     # returns file list @in directory
-
+    sout=''
+    serr=''
+    inlst=''
+    outlst=''
     print(f'running provider chart: {c['id']}')
     tmpdir=f'tmp/{c['id']}'
     if os.path.exists(tmpdir):
@@ -563,25 +566,48 @@ def run_provider(c, wdir):
     scrprov=f'{wdir}/scr/run-provider'
     scrpath=f'{wdir}/tmp/{c['id']}.lst'
     ssh_savetext(c['execution']['script'], scrpath)
-    out=ssh_raw(f'{scrprov} {scrpath}')
-    inlst=ssh(f'ls -1 {wdir}/in')
-    #print(f'{out.stdout}\n{out.stderr}')
+    try:
+        out=ssh_raw(f'{scrprov} {wdir} {scrpath}')
+        inlst=ssh(f'ls -1 {wdir}/in')
+        outlst=ssh(f'ls -1 {wdir}/out')
+        sout=out.stdout
+        serr=out.stderr
+    except Exception as e:
+        print(e)
+        serr='error occured'
+
+    #print(out)
     #print(inlst)
     
-    return {'input': inlst.strip()}
+    return {
+        'input': inlst.strip(), 
+        'output': outlst.strip(),
+        'stdout': sout,
+        'stderr': serr
+        }
 
 def run_executor(c, wdir):
 
     ty=c['execution']['type']
-
+    sout=''
+    serr=''
+    
     if ty == 'script':
         runner=f'{wdir}/scr/run-bash'
         scrpath=f'{wdir}/tmp/{c['id']}.sh'
         ssh_savetext(c['execution']['script'], scrpath)
-        out=ssh_raw(f'{runner} {scrpath} {c['execution']['args']}')
-        if out:
-            return {'out': out.stdout, 'err': out.stderr}
-
+        out=ssh_raw(f'{runner} {wdir} {scrpath} {c['execution']['args']}')
+        sout=out.stdout
+        serr=out.stderr
+    
+    inlst=ssh(f'ls -1 {wdir}/in')
+    outlst=ssh(f'ls -1 {wdir}/out')
+    return {
+        'input': inlst.strip(), 
+        'output': outlst.strip(),
+        'stdout': sout, 
+        'stderr': serr
+        }
 
 def run_validator():
     pass

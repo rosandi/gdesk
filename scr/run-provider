@@ -1,4 +1,35 @@
 #!/bin/bash
-echo args: $1
-echo download to be implemented
-echo link tobe implemented
+
+# $1 => project directory
+# $2 => script path
+
+# entry:
+# copy:path/to/file
+# link:path/to/file
+# http://url
+# https://url
+# git://url
+
+echo args: $@
+
+for line in $(cat $2); do
+    service=$(cut -d: -f1)
+    target=$(cut -d: -f2)
+    echo service: $service
+    echo target: $target
+    
+    case $service in
+    copy)
+        echo copying file $target to in directory
+        ;;
+    link)
+        echo link file $target to in directory
+        ;;
+    http|https)
+        echo download $target to in directory
+        ;;
+    git)
+        echo clone git repository $target
+        ;;
+    esac
+done
