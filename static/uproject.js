@@ -12,6 +12,25 @@ var linkto=null;
 var stor=[]
 var select=[]
 
+var chart_content=`
+<div class='chart-group'>
+<div>{{name}}<br>{{id}}</div>
+<div style='display:flex;gap:5px;margin-left:auto;margin-right:auto'>
+{{type}}</div>
+<div><input type='checkbox' onclick='change_chart_act(this,\""+c.id+"\")' {{checked}}>
+<span style='margin-bottom:5px'>bypass</span></div>
+<div style='display:flex;gap:5px;margin-left:auto;margin-right:auto'>
+<button onclick='edit_chart("{{id}}")'>edit</button>
+<button onclick='execute_chart("{{id}}")'>run</button>
+</div></div>
+`
+
+class stageChart {
+    constructor(htcontent,chart_type) {
+        
+    }
+}
+
 function remove_chart(id) {
     cid=find_chart_index(id)
     project_charts.splice(cid,1)
