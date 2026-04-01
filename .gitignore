@@ -8,6 +8,7 @@ wheels/
 passwd
 shadow
 group
+users.lst
 ghpc-config.json
 # Virtual environments
 .venv
