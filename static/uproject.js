@@ -5,28 +5,23 @@
 var project_data=null // data only for current project
 var project_charts=[] // chart list in one project!
 var nchart=0
-var ct={} // FIXME! load all pages on load
+var htpage={} // FIXME! load all pages on load
 var chart_dirty=true
 var chart_width=120;
 var linkto=null;
 var stor=[]
 var select=[]
 
-var chart_content=`
+var chart_box_content=`
 <div id='{{id}}' class='stage-box' style='left:{{posx}}px;top:{{posy}}px'>
 <div class='chart-group'>
 <div>{{name}}<br>{{id}}</div>
-<div style='display:flex;gap:5px;margin-left:auto;margin-right:auto'>
-{{type}}</div>
-<div><input type='checkbox' 
-onclick='change_chart_act(this,"{{id}}")' {{checked}}>
+<div style='display:flex;gap:5px;margin-left:auto;margin-right:auto'>{{type}}</div>
+<div><input type='checkbox' {{checked}}>
 <span style='margin-bottom:5px'>bypass</span></div>
 <div style='display:flex;gap:5px;margin-left:auto;margin-right:auto'>
-<button onclick='edit_chart("{{id}}")'>edit</button>
-<button onclick='execute_chart("{{id}}")'>run</button>
-</div>
-</div>
-</div>
+<button>edit</button><button>run</button>
+</div></div></div>
 `
 
 class Chart {
@@ -38,29 +33,47 @@ class Chart {
     bypass=false 
     status=true 
     drawn=false
+    tailform=''
     
-    constructor(_content,_type,_div,) {
+    constructor(_manager,_type,_div,_box_content,_form_content) {
+        /* 
+         * --> _type: chart type
+         * --> _div: chart draw area
+         * --> _box_content: chart html 
+         * --> _form_content: chart html 
+         */
+        this.manager=_manager
         this.id=crypto.randomUUID().split('-')[0]
-        this.content=_content
+        this.box_content=_box_content
+        this.form_content=_form_content
         this.div=_div
         this.type=_type
     }
     
-    draw(div) {
-        let area=getelm(div)
+    bind_chart_box() {
+        const editbtn=getelm('edit-'+this.id)
+        const execbtn=getelm'exec-'+this.id)
+        const cbypass=getelm('check-'+this.id)
+        editbtn.addEventListener('click', (e)=>this.edit())
+        execbtn.addEventListener('click', (e)=>this.exec())
+        cbypass.addEventListener('change', (e)=>{this.bypass=cbypass.checked})
+    }
+    
+    draw() { // draw the chart_box, not the edit dialog
+        let area=getelm(this.div)
         let htvars={
             posx:0,
             posy:0,
             name:this.name,
-            id:this.id;
-            checked:(bypass?'checked':''
+            id:this.id,
+            checked:bypass?'checked':''
         }
         area.innerHTML+=text_replace(this.content,htvars)
         this.element=getelm(this.id)
         this.element.style.zIndex=100
-        drawn=true
+        this.drawn=true
     }
-    
+
     change_coord(el) {
         let left=el.style.left.replace('px','')
         let top=el.style.top.replace('px','')
@@ -70,7 +83,11 @@ class Chart {
         coord[1]=top
     }
     
-    draggable() {
+    draggable() {  
+        /* Click on the bos surface event
+         * --> this must be called from the Container!
+         */
+         
         if (!this.drawn) return
         this.isDragging = false
         let el=this.element
@@ -104,19 +121,145 @@ class Chart {
                             linkto=null
                         }
                     }
-                } 
-                else this.change_coord(el)
+                } else this.change_coord(el)
             }
         }
+    }
+    
+    bind_chart_form() { // must be called from manager
+        const namefield=getelm('name-'+this.id)
+        const typefield=getelm('type-'+this.id)
+        const bypsfield=getelm('bypass-'+this.id)        
+        namefield.addEventListener('blur', (e)=>{this.name=namefield.value})
+        typefield.addEventListener('change', (e)=>{
+            this.type=typefield.value
+            this.tailform()
+        })
+        bypsfield.addEventListener('change', (e)=>{this.bypass=bypsfield.checked})
+        getelm('rm-'+this.id).addEventListener('click'. (e)=>manager.remove(this.id))
+    }
+
+    tailform() {
+        settext('form-'+this.id, text_replace(htpage[this.type], {id:this.id}))
+    }
+
+    edit() {
+        let ss=htpage['chart'] // load this onload
+        let rpl={
+            id: this.id,
+            act: [this.bypass, "checked", ""],
+            name: [
+                this.name=='noname',
+                "placeholder='Enter chart name'",
+                "value='"+this.name+"'"
+            ]
+        }
+        showModal(this.edit_form())
+        this.bind_chart_form()
     }
 
 } //--> class Chart
 
-function remove_chart(id) {
-    cid=find_chart_index(id)
-    project_charts.splice(cid,1)
-    draw_charts()
-    hideModal()
+/*
+
+        get_subpages().then(data => {
+            ct['executor']=data[0]
+            ct['validator']=data[1]
+            ct['provider']=data[2]
+            ct['analyst']=data[3]
+
+            if (c.type != '') {
+                // 1. set the default form if not profided
+                //    required: project-id, char-id
+                setText('chart-type-form', text_replace(ct[c.type], {id:c.id}))
+            }
+            
+            // 2. use event-change to define type
+            exsh=getelm('chart-type')
+            exsh.addEventListener('change', (e)=> {
+                setText('chart-type-form', text_replace(ct[exsh.value], {id:c.id}))
+
+                if (exsh.value == 'provider') {
+                    setup_provider(c)
+                }
+
+                else if (exsh.value == 'executor') {
+                    setup_executor(c)
+                }
+            })
+            
+            // 3. fill in data and show dialog
+            sync_editdata(c)
+            showModal()
+        })
+*/
+
+/*    
+    save(div) {         
+        c.name=getval('chartname')
+        c.type=getval('chart-type')
+        c.act=!getelm('chart-bypass').checked
+        c.execution={}
+        console.log('save chart:',c)
+        setText('chart-status', 'chart updated')
+
+        // FIXME! links
+        //c.links['in'].push(getval['chart-in-link'])
+        //c.links['out'].push(getval['chart-out-link'])
+
+        if(c.type == 'executor') {
+            c.execution['type']=getval('chart-exec-type')
+            c.execution['script']=getval('chart-exec-script')
+            c.execution['path']=getval('chart-exec-path')
+            c.execution['cargs']=getval('chart-exec-cargs')
+            c.execution['args']=getval('chart-exec-args')
+
+            //FIXME: input/output file
+        }
+
+        else if(c.type == 'validator') {
+            c.execution['type']=getval('chart-valid-type')
+            c.execution['script']=getval('chart-valid-script')
+
+            //FIXME: validation criteria
+        }
+        else if(c.type == 'provider') {
+            // notype but actions
+            c.execution['script']=getval('chart-prov-script')
+        }
+        else if(c.type == 'analyst') {
+            c.execution['script']=getval('chart-anal-script')
+          // FIXME: more functions here!
+        }
+
+        this.draw()
+        // console.log(project_charts)
+    }
+*/
+
+class ChartContainer {
+    
+    constructor(area){}
+    
+    remove_chart(id) {
+        cid=find_chart_index(id)
+        project_charts.splice(cid,1)
+        draw_charts()
+        hideModal()
+    }
+    
+    // find chart, otherwise return -1
+    find_chart_by_id(id){
+        let cid=null
+        for (let i=0; i<project_charts.length; i++) {
+            if (project_charts[i].id==id) {
+                cid=project_charts[i]
+                break
+            }
+        }
+        return cid
+    }
+
 }
 
 // FIXME! z-index sorting!
@@ -140,17 +283,6 @@ async function get_subpages() {
     return await Promise.all(requests);
 }
 
-// find chart, otherwise return -1
-function find_chart_by_id(id){
-    let cid=null
-    for (let i=0; i<project_charts.length; i++) {
-        if (project_charts[i].id==id) {
-            cid=project_charts[i]
-            break
-        }
-    }
-    return cid
-}
 
 function find_chart_index(id) {
     let cid=-1
@@ -163,47 +295,7 @@ function find_chart_index(id) {
     return cid
 }
 
-function save_chart(cid) {
-    var c=find_chart_by_id(cid)
-    c.name=getval('chartname')
-    c.type=getval('chart-type')
-    c.act=!getelm('chart-bypass').checked
-    c.execution={}
-    console.log('save chart:',c)
-    setText('chart-status', 'chart updated')
 
-    // FIXME! links
-    //c.links['in'].push(getval['chart-in-link'])
-    //c.links['out'].push(getval['chart-out-link'])
-
-    if(c.type == 'executor') {
-        c.execution['type']=getval('chart-exec-type')
-        c.execution['script']=getval('chart-exec-script')
-        c.execution['path']=getval('chart-exec-path')
-        c.execution['cargs']=getval('chart-exec-cargs')
-        c.execution['args']=getval('chart-exec-args')
-
-        //FIXME: input/output file
-    }
-
-    else if(c.type == 'validator') {
-        c.execution['type']=getval('chart-valid-type')
-        c.execution['script']=getval('chart-valid-script')
-
-        //FIXME: validation criteria
-    }
-    else if(c.type == 'provider') {
-        // notype but actions
-        c.execution['script']=getval('chart-prov-script')
-    }
-    else if(c.type == 'analyst') {
-        c.execution['script']=getval('chart-anal-script')
-      // FIXME: more functions here!
-    }
-
-    draw_chart(c)
-    // console.log(project_charts)
-}
 
 function sync_editdata(c) {
     setval('chart-type', c.type)
@@ -299,67 +391,6 @@ function setup_executor(c) {
 
 // parameter: the charts id, not chart array index!
 // WARNING! select array is cleared here
-
-function edit_chart(id) {
-    select=[]
-    var cid=0
-    for(var i=0;i<project_charts.length;i++) {
-        if (project_charts[i].id == id) {
-            cid=i
-            break
-        }
-    }
-
-    var c=project_charts[cid]
-
-    getText('/subpage?p=edit_chart', (ss)=>{
-
-        replacement={
-            id: c.id,
-            boxid: c.id,
-            act: [c.act, "","checked"],
-            name: [
-                c.name=='noname',
-                "placeholder='Enter chart name'",
-                "value='"+c.name+"'"
-            ]
-        }
-
-        ss=text_replace(ss,replacement)
-        modalText(ss)
-
-        get_subpages().then(data => {
-            ct['executor']=data[0]
-            ct['validator']=data[1]
-            ct['provider']=data[2]
-            ct['analyst']=data[3]
-
-            if (c.type != '') {
-				// 1. set the default form if not profided
-				//    required: project-id, char-id
-				setText('chart-type-form', text_replace(ct[c.type], {id:c.id}))
-			}
-			
-			// 2. use event-change to define type
-			exsh=getelm('chart-type')
-			exsh.addEventListener('change', (e)=> {
-				setText('chart-type-form', text_replace(ct[exsh.value], {id:c.id}))
-
-				if (exsh.value == 'provider') {
-					setup_provider(c)
-				}
-
-				else if (exsh.value == 'executor') {
-					setup_executor(c)
-				}
-			})
-			
-			// 3. fill in data and show dialog
-			sync_editdata(c)
-			showModal()
-        })
-    })
-}
 
 function change_chart_act(chk, id) {
     //console.log('change:', chk.checked)

@@ -1,7 +1,6 @@
 <div class='infotext'>Edit stage: id={{id}}</div>
 <div class='control-group'>
-        <button onclick='save_chart("{{boxid}}");'>update</button>
-        <button onclick='remove_chart("{{boxid}}");'>delete</button>
+        <button id='rm-{{id}}'>delete</button>
         <span id='chart-status'></span>
 </div>
 
@@ -10,14 +9,14 @@
 
         <!-- name -->
         <div class='input-group'>
-                <label for='chartname'>Stage name</label>
-                <input type='text' id='chartname' {{name}}>
+                <label for='name-{{id}}'>Stage Chart name</label>
+                <input type='text' id='name-{{id}}' {{name}}>
         </div>
 
         <!-- type -->
         <div class='input-group'>
-                <label for='chart-type'>Chart type</label>
-                <select id='chart-type' type='text'>
+                <label for='type-{{id}}'>Chart type</label>
+                <select id='type-{{id}}' type='text'>
                         <option value='executor'>Executor</option>
                         <option value='validator'>Validator</option>
                         <option value='provider'>Provider</option>
@@ -27,9 +26,9 @@
 
         </div>
 
-        <div id='chart-type-form'></div>
+        <div id='form-{{id}}'></div>
         <div>
-                <input type='checkbox' id='chart-bypass' {{act}}>
-                <label for='chart-bypass'>bypass</label>
+                <input type='checkbox' id='bypass-{{id}}' {{act}}>
+                <label for='bypass-{{id}}'>bypass</label>
         </div>
 </div>
