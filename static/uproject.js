@@ -12,7 +12,8 @@ var linkto=null;
 var stor=[]
 var select=[]
 
-var chart_box_content=`
+htpages={
+chartbox:`
 <div id='{{id}}' class='stage-box' style='left:{{posx}}px;top:{{posy}}px'>
 <div class='chart-group'>
 <div>{{name}}<br>{{id}}</div>
@@ -22,7 +23,13 @@ var chart_box_content=`
 <div style='display:flex;gap:5px;margin-left:auto;margin-right:auto'>
 <button>edit</button><button>run</button>
 </div></div></div>
-`
+`,
+chartform:'',
+provider:'',
+executor:'',
+validator:'',
+analyst:''
+}
 
 class Chart {
     name: "noname"
@@ -35,14 +42,14 @@ class Chart {
     drawn=false
     tailform=''
     
-    constructor(_manager,_type,_div,_box_content,_form_content) {
+    constructor(_container,_type,_div,_box_content,_form_content) {
         /* 
          * --> _type: chart type
          * --> _div: chart draw area
          * --> _box_content: chart html 
          * --> _form_content: chart html 
          */
-        this.manager=_manager
+        this.container=_container
         this.id=crypto.randomUUID().split('-')[0]
         this.box_content=_box_content
         this.form_content=_form_content
@@ -160,104 +167,129 @@ class Chart {
 
 } //--> class Chart
 
-/*
-
-        get_subpages().then(data => {
-            ct['executor']=data[0]
-            ct['validator']=data[1]
-            ct['provider']=data[2]
-            ct['analyst']=data[3]
-
-            if (c.type != '') {
-                // 1. set the default form if not profided
-                //    required: project-id, char-id
-                setText('chart-type-form', text_replace(ct[c.type], {id:c.id}))
-            }
-            
-            // 2. use event-change to define type
-            exsh=getelm('chart-type')
-            exsh.addEventListener('change', (e)=> {
-                setText('chart-type-form', text_replace(ct[exsh.value], {id:c.id}))
-
-                if (exsh.value == 'provider') {
-                    setup_provider(c)
-                }
-
-                else if (exsh.value == 'executor') {
-                    setup_executor(c)
-                }
-            })
-            
-            // 3. fill in data and show dialog
-            sync_editdata(c)
-            showModal()
-        })
-*/
-
-/*    
-    save(div) {         
-        c.name=getval('chartname')
-        c.type=getval('chart-type')
-        c.act=!getelm('chart-bypass').checked
-        c.execution={}
-        console.log('save chart:',c)
-        setText('chart-status', 'chart updated')
-
-        // FIXME! links
-        //c.links['in'].push(getval['chart-in-link'])
-        //c.links['out'].push(getval['chart-out-link'])
-
-        if(c.type == 'executor') {
-            c.execution['type']=getval('chart-exec-type')
-            c.execution['script']=getval('chart-exec-script')
-            c.execution['path']=getval('chart-exec-path')
-            c.execution['cargs']=getval('chart-exec-cargs')
-            c.execution['args']=getval('chart-exec-args')
-
-            //FIXME: input/output file
-        }
-
-        else if(c.type == 'validator') {
-            c.execution['type']=getval('chart-valid-type')
-            c.execution['script']=getval('chart-valid-script')
-
-            //FIXME: validation criteria
-        }
-        else if(c.type == 'provider') {
-            // notype but actions
-            c.execution['script']=getval('chart-prov-script')
-        }
-        else if(c.type == 'analyst') {
-            c.execution['script']=getval('chart-anal-script')
-          // FIXME: more functions here!
-        }
-
-        this.draw()
-        // console.log(project_charts)
-    }
-*/
-
 class ChartContainer {
+    charts=[]
+
+    constructor(_area){
+        this.area=_area
+    }
     
-    constructor(area){}
-    
+    add_chart() {
+        let c = new Chart(this,'',area,htpage.chartbox,htpage.chartform)
+        charts.push(c)
+        getelm(area).innerHTML+=ss
+        project_charts.push(c)
+        draw_chart(c)
+        refresh_draggable()
+    }
+
     remove_chart(id) {
-        cid=find_chart_index(id)
-        project_charts.splice(cid,1)
-        draw_charts()
+        let cid=find_chart_index(id)
+        this.charts.splice(cid,1)
+        this.draw_charts()
         hideModal()
     }
     
-    // find chart, otherwise return -1
-    find_chart_by_id(id){
-        let cid=null
-        for (let i=0; i<project_charts.length; i++) {
-            if (project_charts[i].id==id) {
-                cid=project_charts[i]
+    find_chart_index(id) {
+        let cid=-1 // unlikely to happen
+        for (let i=0; i<this.charts.length; i++) {
+            if (this.charts[i].id==id) {
+                cid=i
                 break
             }
         }
         return cid
+    }
+    
+    find_chart_by_id(id){
+        let cid=null
+        for (let i=0; i<this.charts.length; i++) {
+            if (this.charts[i].id==id) {
+                cid=this.charts[i]
+                break
+            }
+        }
+        return cid
+    }
+    
+    draw_charts() {
+        setText(this.area,'')
+        for (let i=0; i<this.charts.length; i++) {
+            this.charts[i].draw()
+        }
+
+        for (let i=0; i<charts.length; i++) {
+            let c=charts[i]
+            for (let n=0; n<c.outlinks.length; n++)
+                this.prepare_arrows(c.id, c.outlinks[n])
+            this.draw_connectors(c.id, c.outlinks)
+        }
+
+        refresh_draggable() // fixme
+    }
+
+    draw_connectors(id, lineto, referse=false) {
+        let canvas=getelm(this.area)
+        let crec=canvas.getBoundingClientRect()
+        // console.log('draw conn:', id, lineto)
+        let el=getelm(id)
+        for (cid in lineto) {
+
+            let box=getelm(lineto[cid])
+            let lineid1=referse?"conn"+box.id+el.id+"-1":"conn"+el.id+box.id+"-1"
+            let lineid2=referse?"conn"+box.id+el.id+"-2":"conn"+el.id+box.id+"-2"
+            let line1=getelm(lineid1)
+            let line2=getelm(lineid2)
+            let r1 = el.getBoundingClientRect()
+            let r2 = box.getBoundingClientRect()
+
+            if (referse) {
+                const rt=r2;r2=r1;r1=rt
+            }
+
+            let x1 = r1.left + r1.width / 2 - crec.left
+            let y1 = r1.top + r1.height / 2 - crec.top
+            let x2 = r2.left + r2.width / 2 - crec.left
+            let y2 = r2.top + r2.height / 2 - crec.top
+
+            let xm = (x1+x2)/2
+            let ym = (y1+y2)/2
+
+
+            //console.log('el',el.style.left, el.style.top)
+            //console.log('box', box.style.left, box.style.top)
+            //console.log(x1, y1, x2, y2)
+
+            line1.setAttribute('x1', x1)
+            line1.setAttribute('y1', y1)
+            line1.setAttribute('x2', xm)
+            line1.setAttribute('y2', ym)
+
+            line2.setAttribute('x1', xm)
+            line2.setAttribute('y1', ym)
+            line2.setAttribute('x2', x2)
+            line2.setAttribute('y2', y2)
+        }
+    }
+
+    prepare_arrows(fro, to) { // fro&to: id
+        let ss="<svg class='chart-connector'>"
+        ss+="<line id='conn"+fro+to+"-1' "
+        ss+="x1='0' y1='0' x2='0' y2='0' "
+        ss+="stroke='#3498db' stroke-width='2' marker-end='url(#arrowhead)'/>"
+        ss+="<line id='conn"+fro+to+"-2' "
+        ss+="x1='0' y1='0' x2='0' y2='0' "
+        ss+="stroke='#3498db' stroke-width='2'/>"
+        ss+="</svg>"
+        appendtext('parea',ss)
+    }
+
+    updateLine(el) {
+        const c=find_chart_by_id(el.id)
+        const to=c.links.out
+        const fro=c.links.in
+        if (to.length!=0) draw_connectors(el.id, to)
+        if (fro.length!=0) draw_connectors(el.id, fro, true)
     }
 
 }
@@ -269,32 +301,20 @@ class ChartContainer {
  */
 
 async function get_subpages() {
-    const ct_pages=[
-        '/subpage?p=chart-executor',
-        '/subpage?p=chart-validator',
-        '/subpage?p=chart-provider',
-        '/subpage?p=chart-analyst'
+    const subpages=[
+        executor:'/subpage?p=chart-executor',
+        validator:'/subpage?p=chart-validator',
+        provider:'/subpage?p=chart-provider',
+        analyst:'/subpage?p=chart-analyst'
     ]
 
-    const requests = ct_pages.map(
-        url => fetch(url).then(res => res.text())
-    );
-
-    return await Promise.all(requests);
+    let pages=Object.entries(subpages)
+    const requests = htpages.map( async ([key, url]) => {
+        fetch(url).then(res => res.text())
+    )
+    
+    htpages=Promise.all(requests)
 }
-
-
-function find_chart_index(id) {
-    let cid=-1
-    for (let i=0; i<project_charts.length; i++) {
-        if (project_charts[i].id==id) {
-            cid=i
-            break
-        }
-    }
-    return cid
-}
-
 
 
 function sync_editdata(c) {
@@ -523,96 +543,9 @@ function execute_chart(id) {
     })
 }
 
-function draw_chart(c) {
-
-    /* this draws internal of a chart (inside chart-id)
-     * what to show:
-     * - name
-     * - id
-     * - type
-     * - check: active/passive
-     * - buttons: edit
-     */
-    //console.log(c.act)
-    let ss="<div class='chart-group'>"
-    ss+="<div>"+c.name+"<br>"+c.id+"</div>"
-    ss+="<div style='display:flex;gap:5px;margin-left:auto;margin-right:auto'>"
-    ss+=c.type+"</div>"
-    ss+="<div><input type='checkbox'"
-    ss+="onclick='change_chart_act(this,\""+c.id+"\")' "+((!c.act)?"checked>":">")
-    ss+="<span style='margin-bottom:5px'>bypass</span></div>"
-    ss+="<div style='display:flex;gap:5px;margin-left:auto;margin-right:auto'>"
-    ss+="<button onclick='edit_chart(\""+c.id+"\")'>edit</button>"
-    ss+="<button onclick='execute_chart(\""+c.id+"\")'>run</button>"
-    ss+="</div></div>"
-    setText(c.id,ss)
-}
 
 
 
-function draw_connectors(id, lineto, referse=false) {
-    canvas=getelm('parea')
-    crec=canvas.getBoundingClientRect()
-    // console.log('draw conn:', id, lineto)
-    el=getelm(id)
-    for (cid in lineto) {
-
-        let box=getelm(lineto[cid])
-        let lineid1=referse?"conn"+box.id+el.id+"-1":"conn"+el.id+box.id+"-1"
-        let lineid2=referse?"conn"+box.id+el.id+"-2":"conn"+el.id+box.id+"-2"
-        let line1=getelm(lineid1)
-        let line2=getelm(lineid2)
-        let r1 = el.getBoundingClientRect()
-        let r2 = box.getBoundingClientRect()
-
-        if (referse) {
-            const rt=r2;r2=r1;r1=rt
-        }
-
-        let x1 = r1.left + r1.width / 2 - crec.left
-        let y1 = r1.top + r1.height / 2 - crec.top
-        let x2 = r2.left + r2.width / 2 - crec.left
-        let y2 = r2.top + r2.height / 2 - crec.top
-
-        let xm = (x1+x2)/2
-        let ym = (y1+y2)/2
-
-
-        //console.log('el',el.style.left, el.style.top)
-        //console.log('box', box.style.left, box.style.top)
-        //console.log(x1, y1, x2, y2)
-
-        line1.setAttribute('x1', x1)
-        line1.setAttribute('y1', y1)
-        line1.setAttribute('x2', xm)
-        line1.setAttribute('y2', ym)
-
-        line2.setAttribute('x1', xm)
-        line2.setAttribute('y1', ym)
-        line2.setAttribute('x2', x2)
-        line2.setAttribute('y2', y2)
-    }
-}
-
-function prepare_arrows(fro, to) { // fro&to: id
-    let ss="<svg class='chart-connector'>"
-    ss+="<line id='conn"+fro+to+"-1' "
-    ss+="x1='0' y1='0' x2='0' y2='0' "
-    ss+="stroke='#3498db' stroke-width='2' marker-end='url(#arrowhead)'/>"
-    ss+="<line id='conn"+fro+to+"-2' "
-    ss+="x1='0' y1='0' x2='0' y2='0' "
-    ss+="stroke='#3498db' stroke-width='2'/>"
-    ss+="</svg>"
-    appendtext('parea',ss)
-}
-
-function updateLine(el) {
-    const c=find_chart_by_id(el.id)
-    const to=c.links.out
-    const fro=c.links.in
-    if (to.length!=0) draw_connectors(el.id, to)
-    if (fro.length!=0) draw_connectors(el.id, fro, true)
-}
 
 /***** --> LINK CHARTS
  * 1. chart-id exists in io/out ==> remove link, remove line element
@@ -655,34 +588,7 @@ function link_charts(self, to) {
 
 // Check number of charts
 
-function draw_charts(div='parea') {
-    setText(div,'')
-    nchart=0;
-    for (let i=0; i<project_charts.length; i++) {
-        let c=project_charts[i]
 
-        c.boxid=i // FIXME! maybe not needed!
-
-        console.log(c.coord)
-
-        let ss="<div id='"+c.id+"' class='stage-box' "
-        ss+="style='left:"+c.coord[0]+"px;top:"+c.coord[1]+"px;z-index:500'>";
-        ss+="</div>"
-        getelm(div).innerHTML+=ss
-        draw_chart(c)
-        nchart++
-    }
-
-    for (let i=0; i<project_charts.length; i++) {
-        c=project_charts[i]
-        for (let n=0; n<c.links.out.length; n++) {
-            prepare_arrows(c.id, c.links.out[n])
-        }
-        draw_connectors(c.id, c.links.out)
-    }
-
-    refresh_draggable()
-}
 
 /***** ADDING NEW CHART
 / div ID --> parea
