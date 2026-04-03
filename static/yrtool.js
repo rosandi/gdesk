@@ -88,7 +88,7 @@ function setText(id, text) { // WARNING: Obsolete!
 }
 
 function appendtext(id, text) {
-    document.getElementById(id).innerHTML+=text;
+    document.getElementById(id).insertAdjacentHTML('beforeend',text);
 }
 
 function getcontent(id){

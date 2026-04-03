@@ -8,13 +8,15 @@ var stor=[]
 var htpage={}
 
 class Chart {
-    name= "noname"
+    name_= "noname"
+    type_=''
+    bypass_=false 
+
     dirty=true
     coord = [0, 0]
     inlinks=[]
     outlinks=[]
     execution={}
-    bypass=false 
     status=true 
     drawn=false
     tailform=''
@@ -35,6 +37,28 @@ class Chart {
         this.type=_type
     }
     
+    set name(nm){
+        this.name_=nm
+        try {settext('box-name-'+this.id, nm)} 
+        catch(e){}
+    }
+        
+    set type(t){
+        this.type_=t
+        try{settext('box-type-'+this.id, t)} 
+        catch(e){}
+    }
+    
+    set bypass(b){
+        this.bypass_=b
+        try{getelm('box-check-'+this.id).checked=b}
+        catch(e){}
+    }
+    
+    get name(){return this.name_}
+    get type(){return this.type_}
+    get bypass(){return this.bypass_}
+    
     json() {
         // Convert this class into json object
         let jdat={
@@ -51,12 +75,16 @@ class Chart {
     }
     
     bind_chart_box() {
-        const editbtn=getelm('edit-'+this.id)
-        const execbtn=getelm('exec-'+this.id)
-        const cbypass=getelm('check-'+this.id)
-        editbtn.addEventListener('click', (e)=>{this.edit()})
-        execbtn.addEventListener('click', (e)=>{this.exec()})
-        cbypass.addEventListener('change', (e)=>{this.bypass=cbypass.checked})
+        let editbtn=getelm('box-edit-'+this.id)
+        let execbtn=getelm('box-exec-'+this.id)
+        let cbypass=getelm('box-check-'+this.id)
+        
+        editbtn.onclick=()=>{this.edit()}
+        execbtn.onclick=()=>{this.exec()}
+        cbypass.addEventListener('change', (e)=>{
+            console.log('bypass',cbypass.checked)
+            this.bypass=cbypass.checked
+        })
     }
     
     /* draw set the element property 
@@ -72,9 +100,11 @@ class Chart {
             type:this.type,
             checked: this.bypass?'checked':''
         }
-        area.innerHTML+=text_replace(this.box_content, htvars)
+        let ss=text_replace(this.box_content, htvars)
+        appendtext(this.area,ss)
         getelm(this.id).style.zIndex=100
         this.drawn=true
+        this.bind_chart_box()
         console.log('drawn:',this.id)
     }
 
@@ -145,21 +175,53 @@ class Chart {
         const namefield=getelm('name-'+this.id)
         const typefield=getelm('type-'+this.id)
         const bypsfield=getelm('bypass-'+this.id)        
-        namefield.addEventListener('blur', (e)=>{this.name=namefield.value})
+        namefield.addEventListener('blur', (e)=>{
+            this.name=namefield.value
+            console.log('name change', this.name)
+        })
         typefield.addEventListener('change', (e)=>{
             this.type=typefield.value
-            this.tailform()
+            settext('form-'+this.id, text_replace(htpage[this.type], {id:this.id}))
         })
         bypsfield.addEventListener('change', (e)=>{this.bypass=bypsfield.checked})
         getelm('rm-'+this.id).addEventListener('click', (e)=>{manager.remove(this.id)})
+        getelm('accept-'+this.id).onclick=()=>{this.accept_form();hideModal();}
     }
 
-    tailform() {
-        settext('form-'+this.id, text_replace(htpage[this.type], {id:this.id}))
+    accept_form() { // record form: warning some are automatic
+    
+        let execution={}
+
+        if(this.type == 'executor') {
+            execution['type']=getval('chart-exec-type')
+            execution['script']=getval('chart-exec-script')
+            execution['path']=getval('chart-exec-path')
+            execution['cargs']=getval('chart-exec-cargs')
+            execution['args']=getval('chart-exec-args')
+            //FIXME: input/output file
+        }
+
+        else if(this.type == 'validator') {
+            execution['type']=getval('chart-valid-type')
+            execution['script']=getval('chart-valid-script')
+
+            //FIXME: validation criteria
+        }
+        else if(this.type == 'provider') {
+            // notype but actions
+            execution['script']=getval('chart-prov-script')
+        }
+        else if(this.type == 'analyst') {
+            execution['script']=getval('chart-anal-script')      
+            // FIXME: more functions here!
+        }
+        
+        this.execution=execution
+
     }
 
     edit() {
-        let ss=htpage['chart'] // load this onload
+        console.log('editing')
         let rpl={
             id: this.id,
             act: [this.bypass, "checked", ""],
@@ -169,10 +231,10 @@ class Chart {
                 "value='"+this.name+"'"
             ]
         }
-        showModal(this.edit_form())
+        let ss=text_replace(htpage['editchart'],rpl)         
+        showModal(ss)
         this.bind_chart_form()
     }
-
 
     /***** --> LINK CHARTS
      * 1. chart-id exists in io/out ==> remove link, remove line element
@@ -654,6 +716,7 @@ async function get_subpages() {
         editprj:   '/subpage?p=edit-project',
         createprj: '/subpage?p=create-project',
         chartbox:  '/subpage?p=chartbox',
+        editchart: '/subpage?p=edit-chart',
         executor:  '/subpage?p=chart-executor',
         validator: '/subpage?p=chart-validator',
         provider:  '/subpage?p=chart-provider',
