@@ -130,8 +130,6 @@ function uniqID(len=8) {
   return st;
 }
 
-
-
 function uploadFiles(
     respond_url, // server url
     input, // file input element
@@ -249,12 +247,17 @@ function getModalContent() {
     return getelm('dlgContent').innerHTML
 }
 
-// text replacement with variable
-// rep is an object, {key:value, ...}
-// key->to be replaced, value -> replacement
-// subtext format to be replaced: {{text}}
-// NO SPACE BETWEEN!
-// if value is array(3) -> [0] condition, [1] true replacement, [2] false replacement
+/******
+ *  text replacement with variable
+ * rep is an object, {key:value, ...}
+ * key->to be replaced, value -> replacement
+ * subtext format to be replaced: {{text}}
+ * 
+ * NO SPACE BETWEEN!
+ * 
+ * if: value is array(3) -> [0] condition, [1] true replacement, [2] false replacement
+ * for: value is array(2) -> [start, stop]
+*/
 
 function text_replace(txt, rep) {
     Object.entries(rep).forEach(([key, value])=> {
@@ -263,7 +266,31 @@ function text_replace(txt, rep) {
             if(value[0]) txt=txt.replaceAll(key,value[1])
             else txt=txt.replaceAll(key,value[2])
         }
-        else txt=txt.replaceAll(key,value);
-    });
-    return txt;
+        else txt=txt.replaceAll(key,value)
+    })
+
+/*  --> PENDING!
+    // search for forstatement {%for:start:stop%}
+    while(txt.includes('{%for%}')) {
+        let st=txt.indexOf('{%for%}')
+        let se=txt.indexOf('{%endfor%}')
+        if (se<=0) throw new Error('{%for::%} statement error')
+        let holetmp=txt.substring(0,st)+'{%%}'+txt.substring(se+10)
+        let ss=txt.substring(st,se)
+        // 1. get range
+        let range=ss.substring(6,ss.indexOf('%}'))
+        range=range.split(':')
+        ra=parseInt(range[0],10)
+        rb=parseInt(range[1],10)
+        // 2. strip text
+        ss=ss.replace('{%for%}').replace('{%endfor%}','')
+        
+        // 3. replica
+        for
+        ss=ss.replaceAll(key,value)
+        
+        
+    }
+*/
+    return txt
 }

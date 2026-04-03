@@ -25,9 +25,7 @@
         <textarea id='prjnote' type='text' class='sedit'>{{note}}</textarea>
 </div>
 <div  class='control-group'>
-        <button onclick='save_project_info("{{filename}}");'>Save changes</button>
-        <button onclick='chart_designer("{{filename}}");'>
-                Goto project chart
-        </button>
+        <button id='btn-save-project-info'>Save changes</button>
+        <button id='btn-open-chart-designer'>Goto project chart</button>
         <div id='prj_statbar' class='infotext'></div>
 </div>

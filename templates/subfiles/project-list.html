@@ -1,0 +1,31 @@
+<div class='fullcard'>
+    <div>
+        <div class='infotext'>Project list</div>
+        <table id='all-projects-table'>
+ <tr>
+ <th style='width:120px'></th>
+ <th>Project name</th>"
+ <th>Type</th><th>Working Directory</th><th>State</th></tr>
+
+{%for%}
+<!-- for(var i=0; i<p.length; i++) { -->
+<tr class='dynrow'>
+<td hidden>{{filename}}</td>
+<td style='width:120px;padding:0px'>
+<div style='display:flex;gap:5px;justify-content:center'>
+<button class='smallies' onclick='edit_project("{{filename}}");'>edit</button>
+<button class='smallies' onclick='chart_designer("{{filename}}")'>charts</button>
+</div></td>
+<td><input type='checkbox' style='margin-right:10px' name='{{filename}}'>{{name}}</td>
+<td>{{type}}</td><td>{{wdir}}</td><td>{{status}}</td></tr>
+<!-- } -->
+{%endfor%}
+
+</table>
+</div>
+<div>
+<div class='control-group'>
+<button onclick='create_project();'>create project</button>
+<button onclick='remove_project();'>remove project</button>
+</div>
+</div></div>
