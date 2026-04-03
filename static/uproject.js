@@ -63,6 +63,7 @@ class Chart {
      */
     draw() { // draw the chart_box, not the edit dialog
         let area=getelm(this.area)
+        
         let htvars={
             posx:this.coord[0],
             posy:this.coord[1],
@@ -223,13 +224,14 @@ class Chart {
         ss+="x1='0' y1='0' x2='0' y2='0' "
         ss+="stroke='#3498db' stroke-width='2'/>"
         ss+="</svg>"
-        appendtext('arrow-collection',ss)
+        appendtext(this.area,ss)
     }
     
     connect(lineto, reverse=false) {
         let canvas=getelm(this.area)
+        let crec=canvas.getBoundingClientRect()
         let el=getelm(this.id)
-        //console.log(el,lineto)
+
         for (let cid in lineto) {
 
             let box=getelm(lineto[cid])
@@ -244,10 +246,10 @@ class Chart {
                 const rt=r2;r2=r1;r1=rt
             }
 
-            let x1 = r1.left + r1.width / 2 // - crec.left
-            let y1 = r1.top + r1.height / 2 //- crec.top
-            let x2 = r2.left + r2.width / 2 //- crec.left
-            let y2 = r2.top + r2.height / 2 //- crec.top
+            let x1 = r1.left + r1.width / 2 - crec.left
+            let y1 = r1.top + r1.height / 2 - crec.top
+            let x2 = r2.left + r2.width / 2 - crec.left
+            let y2 = r2.top + r2.height / 2 - crec.top
 
             let xm = (x1+x2)/2
             let ym = (y1+y2)/2
@@ -682,4 +684,6 @@ async function projectEnter() {
     pman.list()
 }
 
-function projectLeave() {}
+function projectLeave() {
+    console.log('leaving userspace')
+}
