@@ -212,6 +212,9 @@ function draggableModal() {
     let el=getelm("modal-content")
 
     el.onmousedown = (e) => {
+        //console.log('target:',e.target)
+        if(e.target.id!='modal-content') return
+        
         isDragging = true
         const offsetX = e.clientX - el.offsetLeft
         const offsetY = e.clientY - el.offsetTop
