@@ -452,21 +452,73 @@ class ExecutorChart extends Chart {
     edit() {
         showModal(text_replace(htpage['executor'], {name:this.name,id:this.id}))
         super.bind_chart_form() // for main controls
-        let execution={type:'',script:'',path:'',cargs:'',args:''}
+        
+        let execution={type:'script'}
         Object.assign(execution, this.execution)
-        setval('extype-'+this.id, execution['type'])
-        setval('scr-'+this.id, execution['script'])
-        setval('path-'+this.id, execution['path'])
-        setval('cargs-'+this.id, execution['cargs'])
-        setval('args-'+this.id, execution['args'])
+        if(execution.type=='script') {
+            execution={type:'script',script:'',path:'bash',cargs:'',args:''} // in case undefined yet
+            Object.assign(execution, this.execution)
+            setval('extype-'+this.id, execution['type'])
+            setval('scr-'+this.id, execution['script'])
+            setval('path-'+this.id, execution['path'])
+            setval('cargs-'+this.id, execution['cargs'])
+            setval('args-'+this.id, execution['args'])
+        }
+        else if(execution.type=='queue') {
+            Object.assign(execution, this.execution)
+            console.log(execution)
+            setval('extype-'+this.id, execution['type'])
+            setval('queue-script', execution['script'])
+            setval('queue-job-name', execution['jobname'])
+            setval('queue-partition', execution['partition'])
+            setval('queue-node-number', execution['numnode'])
+            setval('queue-proc-number', execution['numproc'])
+        }
+        else if(execution.type='mpi') {
+            Object.assign(execution, this.execution)
+            setval('extype-'+this.id, execution['type'])
+            setval('mpi-proc-number', execution['numproc']) 
+            setval('mpi-program-path', execution['path'])
+            setval('mpi-cargs', execution['cargs'])
+            setval('mpi-program-args'+this.id, execution['args'])            
+        }
+        
+        getelm('exec-type-'+execution.type).style.display='block'
+        getelm('extype-'+this.id).addEventListener('change', (e)=>{this.select_exec_type_form(e)})
+    }
+    
+    select_exec_type_form(slc) {
+        getelm('exec-type-script').style.display='none'    
+        getelm('exec-type-queue').style.display='none'    
+        getelm('exec-type-mpi').style.display='none'
+        getelm('exec-type-'+slc.target.value).style.display='block'
     }
     
     accept_form() {
         let execution={}
-        execution['script']=getval('scr-'+this.id)
-        execution['path']=getval('path-'+this.id)
-        execution['cargs']=getval('cargs-'+this.id)
-        execution['args']=getval('args-'+this.id)
+        let etype=getval('extype-'+this.id)
+        execution['type']=etype
+        
+        if (etype=='script') {
+            execution['script']=getval('scr-'+this.id)
+            execution['path']=getval('path-'+this.id)
+            execution['cargs']=getval('cargs-'+this.id)
+            execution['args']=getval('args-'+this.id)
+        }
+        else if(etype=='queue') {
+            execution['script']=getval('queue-script')
+            execution['jobname']=getval('queue-job-name')
+            execution['partition']=getval('queue-partition')
+            execution['numnode']=getval('queue-node-number')
+            execution['numproc']=getval('queue-proc-number')
+        }
+        else if(etype=='mpi') {
+            execution['numproc']=getval('mpi-proc-number')
+            execution['path']=getval('mpi-program-path')
+            execution['cargs']=getval('mpi-cargs')
+            execution['args']=getval('mpi-program-args')
+        }
+            
         this.execution=execution
     }
     
@@ -505,7 +557,6 @@ class AnalystChart extends Chart {
     }
         
 }
-
 
 /********************************************
  * => This class keeps and manages charts

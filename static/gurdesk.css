@@ -250,7 +250,11 @@
   background-color: #fefefe;
   padding: 20px;
   border: 1px solid #888;
-  width: 60%;
+	width: fit-content;
+	height: auto;
+  min-width: 300px;
+	min-height: 200px;
+	overflow-y:auto;
   border-radius: 10px;
 }
 
@@ -309,6 +313,7 @@
 
 .control-group button {
     color: black;
+		height:2em;
     background-color: rgba(180,110,110,0.6);
     border-color: rgba(180,110,110,0.6);
     font-size: 14px;

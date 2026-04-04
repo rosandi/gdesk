@@ -1,65 +1,134 @@
-<div class='infotext'>Edit stage: id={{id}}</div>
+<div class='infotext'>Edit Chart: id={{id}} (Executor)</div>
 <div class='control-group'>
-        <button id='rm-{{id}}'>delete</button>
-        <button id='accept-{{id}}'>accept</button>
-        <span id='chart-status'></span>
+    <button id='rm-{{id}}'>delete</button>
+    <button id='accept-{{id}}'>accept</button>
+    <span id='chart-status'></span>
 </div>
 
 <div class='project_editcard'>
-        <div style='display:flex;gap:10px'>
 
+    <div style='display:flex;gap:10px'>
         <!-- name -->
         <div class='input-group'>
-                <label for='name-{{id}}'>Stage Chart name</label>
-                <input type='text' id='name-{{id}}' value='{{name}}'>
+            <label for='name-{{id}}'>Stage Chart name</label>
+            <input type='text' id='name-{{id}}' value='{{name}}'>
+        </div>
+        <div class='input-group'>
+            <label for='extype-{{id}}'>Exec type</label>
+            <select id='extype-{{id}}'>
+                <option value='script'>Script</option>
+                <option value='queue'>Queue submission</option>
+                <option value='mpi'>MPI program</option>
+            </select>
+        </div>
+    </div>
+    
+    <!-- executor specifics -->
+    <!-- exec-type: script -->
+    <div id='exec-type-script' style='display:none'>
+        <div style='display:flex;gap:10px'>
+            <div class='input-group'>
+                <label for='path-{{id}}'>Interpreter</label>
+                <select id='path-{{id}}' value='bash'>
+                    <option value='bash'>Bash</option>
+                    <option value='python'>Python</option>
+                    <option value='awk'>awk</option>
+                </select>
+            </div>
+            
+            <div class='input-group'>
+                <label for='cargs-{{id}}'>Interpreter arguments</label>
+                <input type='text' id='cargs-{{id}}' placeholder='interpreter arguments'>
+            </div>
+        </div>
+        
+        <div style='display:flex;gap:10px'>
+            <div class='input-group'>
+                <label for='args-{{id}}'>Program arguments</label>
+                <input type='text' id='args-{{id}}' style='width:50%' placeholder='program arguments'>
+            </div>
         </div>
 
-        <!-- type -->
         <div class='input-group'>
-            Chart Type: EXECUTOR
+            <label for='scr-{{id}}'>Script</label>
+            <textarea id='scr-{{id}}'
+            class='code-editor'
+            placeholder="Write your script here..."
+            spellcheck="false"></textarea>
         </div>
+    </div>
+
+    <!-- exec-type queue -->
+    <div id='exec-type-queue' style='display:none'>
+        <div style='display:grid;grid-template-columns: 1fr 1fr;gap:10px;'>
+            <div class='input-group'>
+                <label for='queue-job-name'>Job Name</label>
+                <input type='text' id='queue-job-name' placeholder='enter job name'>
+            </div>
+
+            <div class='input-group'>
+                <label for='queue-partition'>Partition</label>
+                <select id='queue-partition' value='bash'>
+                    <option>default</option>
+                </select>
+            </div>
+            
+            <div class='input-group'>
+                <label for='queue-node-list'>Nodes list</label>
+                <input type='text' id='queue-node-list' placeholder='comma separated'>
+            </div>
+            
+            <div class='input-group'>
+                <label for='queue-node-number'>Number of nodes</label>
+                <input type='number' id='queue-node-number' placeholder='1'>
+            </div>
+
+            <div class='input-group'>
+                <label for='queue-proc-number'>Number of processor</label>
+                <input type='number' id='queue-proc-number' placeholder='4'>
+            </div>
 
         </div>
         
-        <!-- executor specifics -->
-        <div style='display:flex;gap:10px'>
         <div class='input-group'>
-                <label for='extype-{{id}}'>Exec type</label>
-                <select id='extype-{{id}}' type='text'>
-                        <option value='script'>Script</option>
-                        <option value='queue'>Queue submission</option>
-                        <option value='mpi'>MPI program</option>
-                </select>
+            <label for='queue-script'>Program Script</label>
+            <textarea id='queue-script'
+            class='code-editor'
+            placeholder="Write your code here..."
+            spellcheck="false"></textarea>
         </div>
+    </div>
 
-        <div class='input-group'>
-                <label for='path-{{id}}'>Interpreter</label>
-                <input type='text' id='path-{{id}}'>
-        </div>
-        </div>
+    <!-- exec-type MPI -->
+    <div id='exec-type-mpi' style='display:none'>
+        <div style='display:grid;grid-template-columns: 1fr 1fr;gap:10px;'>
+            
+            <div class='input-group'>
+                <label for='mpi-proc-number'>Number of processor</label>
+                <input type='number' id='mpi-proc-number' placeholder='4'>
+            </div>
+            
+            <div class='input-group'>
+                <label for='mpi-cargs'>MPI arguments</label>
+                <input type='text' id='mpi-cargs' placeholder='mpirun arguments'>
+            </div>
 
-        <div style='display:flex;gap:10px'>
-        <div class='input-group'>
-                <label for='cargs-{{id}}'>Interpreter arguments</label>
-                <input type='text' id='cargs-{{id}}'>
-        </div>
+            <div class='input-group'>
+                <label for='mpi-program-path'>Program path</label>
+                <input type='text' id='mpi-program-path' placeholder='program path'>
+            </div>
 
-        <div class='input-group'>
-                <label for='args-{{id}}'>Program arguments</label>
-                <input type='text' id='args-{{id}}'>
+            <div class='input-group'>
+                <label for='mpi-program-args'>Program arguments</label>
+                <input type='text' id='mpi-program-args' placeholder='program arguments'>
+            </div>
         </div>
-        </div>
+    </div>
 
-        <div class='input-group'>
-                <label for='scr-{{id}}'>Script</label>
-                <textarea id='scr-{{id}}'
-                class='code-editor'
-                placeholder="Write your code here..."
-                spellcheck="false"></textarea>
-        </div>
-
-        <div>
-                <input type='checkbox' id='bypass-{{id}}' {{bypass}}>
-                <label for='bypass-{{id}}'>bypass</label>
-        </div>
+    <!-- bypass chart -->
+    <div>
+        <input type='checkbox' id='bypass-{{id}}' {{bypass}}>
+        <label for='bypass-{{id}}'>bypass</label>
+    </div>
+    
 </div>
