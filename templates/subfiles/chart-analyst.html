@@ -1,5 +1,39 @@
-<div class='input-group'>
-	<label for='chart-anal-script'>Analysis script</label>
-	<textarea id='chart-anal-script'></textarea>	
+<div class='infotext'>Edit stage: id={{id}}</div>
+<div class='control-group'>
+        <button id='rm-{{id}}'>delete</button>
+        <button id='accept-{{id}}'>accept</button>
+        <span id='chart-status'></span>
 </div>
+
+<div class='project_editcard'>
+        <div style='display:flex;gap:10px'>
+
+        <!-- name -->
+        <div class='input-group'>
+                <label for='name-{{id}}'>Stage Chart name</label>
+                <input type='text' id='name-{{id}}' value='{{name}}'>
+        </div>
+
+        <!-- type -->
+        <div class='input-group'>
+            Chart Type: ANALIST
+        </div>
+
+        </div>
+        
+        <!-- analyst specifics -->
+
+        <div class='input-group'>
+            <label for='chart-anal-script'>Analysis script</label>
+            <textarea id='chart-anal-script'></textarea>	
+        </div>
+
+        <!-- analyst ends -->
+        
+        <div> <!-- bypass checkbox -->
+                <input type='checkbox' id='bypass-{{id}}' {{bypass}}>
+                <label for='bypass-{{id}}'>bypass</label>
+        </div>
+</div>
+
 

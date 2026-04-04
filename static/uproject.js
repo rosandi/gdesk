@@ -3,7 +3,7 @@
  */
 
 var chart_dirty=true
-var chart_width=120;
+var chart_width=120
 var stor=[]
 var htpage={}
 
@@ -22,19 +22,19 @@ class Chart {
     tailform=''
     dragging=false
     
-    constructor(_container,_type,_area,_box_content,_form_content) {
+    constructor(container,type,box_content,form_content='') {
         /* 
          * --> _type: chart type
          * --> _area: chart draw area
          * --> _box_content: chart html 
          * --> _form_content: chart html 
          */
-        this.container=_container
+        this.container=container
         this.id=crypto.randomUUID().split('-')[0]
-        this.box_content=_box_content
-        this.form_content=_form_content
-        this.area=_area
-        this.type=_type
+        this.box_content=box_content
+        this.form_content=form_content
+        this.area=container.area
+        this.type=type
     }
     
     set name(nm){
@@ -42,7 +42,7 @@ class Chart {
         try {settext('box-name-'+this.id, nm)} 
         catch(e){}
     }
-        
+    
     set type(t){
         this.type_=t
         try{settext('box-type-'+this.id, t)} 
@@ -51,14 +51,16 @@ class Chart {
     
     set bypass(b){
         this.bypass_=b
-        try{getelm('box-check-'+this.id).checked=b}
+        try{
+            getelm('box-check-'+this.id).checked=b
+        }
         catch(e){}
     }
-    
+
     get name(){return this.name_}
     get type(){return this.type_}
     get bypass(){return this.bypass_}
-    
+
     json() {
         // Convert this class into json object
         let jdat={
@@ -73,6 +75,15 @@ class Chart {
             execution:this.execution
         }
         return jdat
+    }
+    
+    set data(_data) {
+        Object.assign(this, _data)
+        console.log('data assigned:', this)
+    }
+    
+    get data() {
+        return this.json()
     }
     
     bind_chart_box() {
@@ -106,7 +117,6 @@ class Chart {
         getelm(this.id).style.zIndex=100
         this.drawn=true
         this.bind_chart_box()
-        console.log('drawn:',this.id)
     }
 
     change_coord() {
@@ -174,18 +184,15 @@ class Chart {
     
     bind_chart_form() { // must be called from manager
         const namefield=getelm('name-'+this.id)
-        const typefield=getelm('type-'+this.id)
-        const bypsfield=getelm('bypass-'+this.id)        
+        const bypsfield=getelm('bypass-'+this.id)
+         
         namefield.addEventListener('blur', (e)=>{
             this.name=namefield.value
             console.log('name change', this.name)
         })
-        typefield.addEventListener('change', (e)=>{
-            this.type=typefield.value
-            this.chart_typeform()
-        })
+        
         bypsfield.addEventListener('change', (e)=>{this.bypass=bypsfield.checked})
-        getelm('rm-'+this.id).addEventListener('click', (e)=>{manager.remove(this.id)})
+        getelm('rm-'+this.id).addEventListener('click', (e)=>{this.container.remove(this.id)})
         getelm('accept-'+this.id).onclick=()=>{this.accept_form();hideModal();}
     }
     
@@ -234,40 +241,12 @@ class Chart {
         }        
     }
 
-    accept_form() { // record form: warning some are automatic
-    
-        let execution={}
+    accept_form() {}
 
-        if(this.type == 'executor') {
-            execution['script']=getval('scr-'+this.id)
-            execution['path']=getval('path-'+this.id)
-            execution['cargs']=getval('cargs-'+this.id)
-            execution['args']=getval('args-'+this.id)
-            //FIXME: input/output file
-        }
-
-        else if(this.type == 'validator') {
-            execution['script']=getval('scr-'+this.id)
-
-            //FIXME: validation criteria
-        }
-        
-        else if(this.type == 'provider') {
-            // notype but actions
-            execution['script']=getval('scr-'+this.id)
-        }
-        else if(this.type == 'analyst') {
-            execution['script']=getval('scr-'+this.id)      
-            // FIXME: more functions here!
-        }
-        
-        console.log('accept-form',execution)
-        this.execution=execution
-
-    }
+/**** --> fixme: replace! */
 
     edit() {
-        console.log('editing')
+        console.log('editing', this)
         let rpl={
             id: this.id,
             bypass: [this.bypass, "checked", ""],
@@ -285,7 +264,7 @@ class Chart {
     }
     
     exec() {
-        if (c.name=='noname') return
+        if (this.name=='noname') return
         console.log('execute:', this.id)
         this.container.save()
         getJSON("/runchart?p="+this.container.filename+"&c="+this.id, (out)=>{
@@ -298,6 +277,7 @@ class Chart {
      * 1. chart-id exists in io/out ==> remove link, remove line element
      * 2. otherwise ==> add link
      */
+ 
 
     link() {
         let bucket=this.container
@@ -398,9 +378,134 @@ class Chart {
         if(tolist.lenght!=0) this.connect(tolist)
         if(frolist.length!=0) this.connect(frolist,true)
     }
-    
+
+    unlink(peer) {
+        let inlinks=this.inlinks
+        let outlinks=this.outlinks
+        let elpeer=this.container.find_chart_by_id(peer)
+        let peer_inlinks=elpeer.inlinks
+        let peer_outlinks=elpeer.outlinks
+        
+        if (inlinks.includes(peer)) {
+            inlinks.splice(inlinks.indexOf(peer),1)
+            peer_outlinks.splice(peer_outlinks.indexOf(this.id),1)
+            getelm("conn"+peer+this.id+"-1").remove()
+            getelm("conn"+peer+this.id+"-2").remove()
+        }
+        
+        if (outlinks.includes(peer)) {
+            outlinks.splice(outlinks.indexOf(peer),1)
+            peer_inlinks.splice(peer_inlinks.indexOf(this.id),1)            
+            getelm("conn"+this.id+peer+"-1").remove()
+            getelm("conn"+this.id+peer+"-2").remove()
+        }
+    }
+
+    remove() {
+        let inn=Array.from(this.inlinks)
+        let outn=Array.from(this.outlinks)
+        
+        for(let i=0; i<inn.length; i++) {
+            this.unlink(inn[i])
+        }
+        for(let i=0; i<outn.length; i++) {
+            this.unlink(outn[i])
+        }
+        getelm(this.id).remove()
+    }
+
 } 
-/* <-- class Chart */
+// <-- class Chart
+
+class ProviderChart extends Chart {
+    constructor(container) {
+        super(container, 'provider', htpage['chartbox'])
+    }
+    
+    edit() {
+        showModal(text_replace(htpage['provider'], {name:this.name,id:this.id}))
+        super.bind_chart_form() // for main controls
+        let execution={script:''}
+        Object.assign(execution, this.execution)
+        setval('scr-'+this.id, execution['script'])
+        
+        getelm('file-browser').onclick=(e)=>{
+            collector=()=>{
+                setval('scr-'+this.id, accumulator)
+                this.bind_chart_form()
+            }
+            update_filebrowser('.')
+        }
+    }
+    
+    accept_form() { 
+        this.execution['script']=getval('scr-'+this.id)
+    }
+
+}
+
+class ExecutorChart extends Chart {
+    constructor(container) {
+        super(container, 'executor', htpage['chartbox'])
+    }
+    
+    edit() {
+        showModal(text_replace(htpage['executor'], {name:this.name,id:this.id}))
+        super.bind_chart_form() // for main controls
+        let execution={type:'',script:'',path:'',cargs:'',args:''}
+        Object.assign(execution, this.execution)
+        setval('extype-'+this.id, execution['type'])
+        setval('scr-'+this.id, execution['script'])
+        setval('path-'+this.id, execution['path'])
+        setval('cargs-'+this.id, execution['cargs'])
+        setval('args-'+this.id, execution['args'])
+    }
+    
+    accept_form() {
+        let execution={}
+        execution['script']=getval('scr-'+this.id)
+        execution['path']=getval('path-'+this.id)
+        execution['cargs']=getval('cargs-'+this.id)
+        execution['args']=getval('args-'+this.id)
+        this.execution=execution
+    }
+    
+}
+
+class ValidatorChart extends Chart {
+    constructor(container) {
+        super(container, 'validator', htpage['chartbox'])
+    }
+    
+    edit() { // TODO
+        showModal(text_replace(htpage['validator'], {name:this.name,id:this.id}))
+        super.bind_chart_form() // for main controls
+        let execution={type:'',script:''}
+        Object.assign(execution, this.execution)
+    }
+    accept_form() {
+        this.execution['script']=getval('scr-'+this.id)
+    }
+}
+
+class AnalystChart extends Chart {
+    constructor(container) {
+        super(container, 'analyst', htpage['chartbox'])
+    }
+    
+    edit() { // TODO
+        showModal(text_replace(htpage['analyst'], {name:this.name,id:this.id}))
+        super.bind_chart_form() // for main controls
+        let execution={type:'',script:''}
+        Object.assign(execution, this.execution)
+    }
+    
+    accept_form() {
+        this.execution['script']=getval('scr-'+this.id)      
+    }
+        
+}
+
 
 /********************************************
  * => This class keeps and manages charts
@@ -412,21 +517,36 @@ class ChartContainer {
     dirty=true
     linkto=null
     
-    constructor(_area, _pfname){
+    constructor(_area, _pfname) {
         this.area=_area
         this.filename=_pfname // fixme: filename --> rearrange! ghpc-XXXXX.json
         this.name=_pfname.replace('ghpc-','').replace('.json','')
     }
     
-    add_chart() {
-        let c = new Chart(
-            this,'',
-            this.area,
-            htpage.chartbox,
-            htpage.chartform
-        )
-        this.charts.push(c)
-        this.draw_charts(c)
+    add_chart(name, type) { //accept json data
+        var c = null
+        if (type == 'provider') {
+            console.log('adding provider')
+            c=new ProviderChart(this)
+            c.name = name
+        }
+        else if (type == 'executor') {
+            c=new ExecutorChart(this)
+            c.name = name
+        }
+        else if (type == 'validator') {
+            c=new ValidatorChart(this)
+            c.name = name
+        }
+        else if (type == 'analyst') {
+            c=new AnalystChart(this)
+            c.name = name
+        }
+        
+        if(c) {
+            this.charts.push(c)
+            this.draw_charts()
+        }
     }
 
     load() {
@@ -434,17 +554,23 @@ class ChartContainer {
         getJSON('/project?fetch='+this.filename, (p)=>{
             console.log('loading charts',p)
             for(let i=0;i<p.length;i++) {
-                let c = new Chart(this,'',this.area,
-                            htpage.chartbox,htpage.chartform)
-                Object.assign(c,p[i])
-                this.charts.push(c)
+                var c=null
+                if (p[i].type == 'provider') c=new ProviderChart(this)
+                else if(p[i].type == 'executor') c=new ExecutorChart(this)
+                else if(p[i].type == 'validator') c=new ValidatorChart(this)
+                else if(p[i].type == 'analyst') c=new AnalystChart(this)
+                if(c) {
+                    Object.assign(c,p[i])
+                    this.charts.push(c)
+                }
             }
             this.draw_charts()
         })
     }
 
-    remove_chart(id) {
-        let cid=find_chart_index(id)
+    remove(id) {
+        let cid=this.find_chart_index(id)
+        this.charts[cid].remove()
         this.charts.splice(cid,1)
         this.draw_charts()
         hideModal()
@@ -486,8 +612,8 @@ class ChartContainer {
             this.charts[i].draw()
         }
         
-        console.log('now create arrows', this.charts.length)
-
+        //console.log('now create arrows', this.charts.length)
+        
         for (let i=0; i<this.charts.length; i++) {
             let c=this.charts[i]
             for (let n=0; n<c.outlinks.length; n++)
@@ -515,7 +641,6 @@ class ChartContainer {
         })
     }
     
-
 }
 /* <-- Chart Container */
 
@@ -540,7 +665,7 @@ class ChartDesigner {
     constructor(pname, divarea) {
         getJSON('/project?list='+pname, (p) => {
             this.filename=pname
-            this.name=pname.replace('gprj-','').replace('.json','')
+            this.name=p[0].name
             this.project=p[0]
             if (this.project==null) return
             this.area=divarea
@@ -558,9 +683,22 @@ class ChartDesigner {
         setText(this.area, ss)
         this.bucket=new ChartContainer(this.arena, this.filename)
         this.bucket.load()
-        getelm('btn-add-chart').addEventListener('click', ()=>{this.bucket.add_chart()})
+        getelm('btn-add-chart').addEventListener('click', ()=>{this.new_chart_form()})
         getelm('btn-save-charts').addEventListener('click', ()=>{this.bucket.save()})
         settext('arrow-collection','')
+    }
+    
+    new_chart_form() {
+        showModal(htpage['newchart'])
+        getelm('create-new-chart').onclick=()=>{
+            let name= getval('new-chart-name')
+            let type= getval('new-chart-type')
+            if (name.trim() == '') {getelm('new-chart-name').focus()}
+            else {
+                this.bucket.add_chart(name, type)
+                hideModal()
+            }
+        }
     }
 }
 
@@ -771,6 +909,7 @@ class ProjectManager {
 async function get_subpages() {
     subpages={
         designer:  '/subpage?p=designer',
+        newchart:  '/subpage?p=new-chartform',
         editprj:   '/subpage?p=edit-project',
         createprj: '/subpage?p=create-project',
         chartbox:  '/subpage?p=chartbox',

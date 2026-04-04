@@ -240,10 +240,10 @@ def login():
                 'password': password
                 }
 
-            ## Create user config if not exists
+            ## first user login --> Create user config
             if ssh(f'ls {userconf}') == '':
                 print(f'creating user directory for {username}@{cfg['host']}')
-                ssh(f'mkdir -p {userconf}/projects')
+                ssh(f'mkdir -p {userconf}/projects {userconf}/script')
                 accinfo={
                         'account': username,
                         'address': '',
@@ -254,6 +254,14 @@ def login():
                         'directory': 'ghpc'
                         }
                 ssh_savetext(json.dumps(accinfo), f'{userconf}/user.json')
+                #  prepare script files
+                scrpath=f'{userconf}/script'
+                scrlst=os.listdir('script')
+
+                for scr in scrlst:
+                    ssh_putfile(f'script/{scr}', f'{scrpath}/')
+                    ssh(f'chmod +x {scrpath}/*')
+
 
         print(f'connection to {hpchost} established')
         return redirect(url_for("home"))
@@ -472,14 +480,6 @@ def create_newproject(pdata):
         ssh(f'mkdir -p {uinfo['directory']}/{pdata['wdir']}/scr')
         ssh(f'mkdir -p {uinfo['directory']}/{pdata['wdir']}/tmp')
 
-        # 2. prepare files
-        scrpath=f'{uinfo['directory']}/{pdata['wdir']}/scr'
-        scrlst=os.listdir('scr')
-
-        for scr in scrlst:
-            ssh_putfile(f'scr/{scr}', f'{scrpath}/{scr}')
-            ssh(f'chmod +x {scrpath}/*')
-
     except Exception as e:
         print('error: project not created')
 
@@ -538,10 +538,11 @@ def project():
 # --> Chart executions API <--
 # 
 
-def run_provider(c, wdir):
+def run_provider(c, p):
      
     #
     # c -> the chart: object (id<-unique)
+    # p -> project file
     # cached files stored in tmp dir
     # 1. transfer files in tmp/token to wdir/in
     # 2. download using wget to wdir/in
@@ -549,12 +550,17 @@ def run_provider(c, wdir):
     #
     # always cleanup!
     # returns file list @in directory
+    #
+    
+    wdir=project_wdir(p)
     sout=''
     serr=''
     inlst=''
     outlst=''
     print(f'running provider chart: {c['id']}')
     tmpdir=f'tmp/{c['id']}'
+    
+    # --> copy cached files
     if os.path.exists(tmpdir):
         print('1. file transfer')
         for d in os.listdir(tmpdir):
@@ -562,10 +568,13 @@ def run_provider(c, wdir):
             os.remove(f'{tmpdir}/{d}')
         os.rmdir(tmpdir)
 
+    # --> run script to create links and copy files
     print('2. download/copy/link/')
-    scrprov=f'{wdir}/scr/run-provider'
-    scrpath=f'{wdir}/tmp/{c['id']}.lst'
+    
+    scrprov=f'{userconf}/script/run-provider'  # the script
+    scrpath=f'{wdir}/tmp/{c['id']}.lst'     # templates from textarea
     ssh_savetext(c['execution']['script'], scrpath)
+    
     try:
         out=ssh_raw(f'{scrprov} {wdir} {scrpath}')
         inlst=ssh(f'ls -1 {wdir}/in')
@@ -586,8 +595,9 @@ def run_provider(c, wdir):
         'stderr': serr
         }
 
-def run_executor(c, wdir):
-
+def run_executor(c, p):
+    
+    wdir=project_wdir(p)
     ty=c['execution']['type']
     sout=''
     serr=''
@@ -635,10 +645,10 @@ def execute_chart(p,cid):
     if not thechart: return
 
     if thechart['type'] == 'provider':
-        return jsonify(run_provider(thechart, wdir))
+        return jsonify(run_provider(thechart, p))
 
     elif thechart['type'] == 'executor':
-        return jsonify(run_executor(thechart, wdir))
+        return jsonify(run_executor(thechart, p))
 
 
     elif thechart['type'] == 'validator':

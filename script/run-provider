@@ -11,25 +11,35 @@
 # git://url
 
 echo args: $@
+wdir="$1/in"
 
 for line in $(cat $2); do
-    service=$(cut -d: -f1)
-    target=$(cut -d: -f2)
+    service=$(echo $line|cut -d: -f1)
+    target=$(echo $line|cut -d: -f2)
     echo service: $service
     echo target: $target
+    [[ "${target:0:1}" = "/" ]] || target=$HOME/$target
     
     case $service in
     copy)
         echo copying file $target to in directory
+	cp $target $wdir/$(basename $target)
         ;;
+
     link)
         echo link file $target to in directory
+	ln -s $target $wdir/$(basename $target)
         ;;
+
     http|https)
         echo download $target to in directory
+	wget $target -O $wdir/$(basename $target)
         ;;
+
     git)
         echo clone git repository $target
+	git clone $target $wdir/$(basename $target)
         ;;
+
     esac
 done

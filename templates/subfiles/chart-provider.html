@@ -1,3 +1,26 @@
+<div class='infotext'>Edit stage: id={{id}}</div>
+<div class='control-group'>
+        <button id='rm-{{id}}'>delete</button>
+        <button id='accept-{{id}}'>accept</button>
+        <span id='chart-status'></span>
+</div>
+
+<div class='project_editcard'>
+        <div style='display:flex;gap:10px'>
+
+        <!-- name -->
+        <div class='input-group'>
+                <label for='name-{{id}}'>Stage Chart name</label>
+                <input type='text' id='name-{{id}}' value='{{name}}'>
+        </div>
+
+        <!-- type -->
+        <div class='input-group'>
+                Chart type: PROVIDER
+        </div>
+
+        </div>
+
 <div style='display:flex;gap:10px'>
     <div>
         <div class='input-group'>
@@ -37,4 +60,10 @@
             <textarea id='scr-{{id}}' class='code-editor'></textarea>
     </div>
 </div>
+</div>
+
+        <div>
+                <input type='checkbox' id='bypass-{{id}}' {{bypass}}>
+                <label for='bypass-{{id}}'>bypass</label>
+        </div>
 </div>

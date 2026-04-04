@@ -1,36 +1,65 @@
-<div style='display:flex;gap:10px'>
-<div class='input-group'>
-        <label for='extype-{{id}}'>Exec type</label>
-        <select id='extype-{{id}}' type='text'>
-                <option value='script'>Script</option>
-                <option value='queue'>Queue submission</option>
-                <option value='mpi'>MPI program</option>
-        </select>
+<div class='infotext'>Edit stage: id={{id}}</div>
+<div class='control-group'>
+        <button id='rm-{{id}}'>delete</button>
+        <button id='accept-{{id}}'>accept</button>
+        <span id='chart-status'></span>
 </div>
 
-<div class='input-group'>
-        <label for='chart-exec-path'>Interpreter</label>
-        <input type='text' id='chart-exec-path'>
-</div>
-</div>
+<div class='project_editcard'>
+        <div style='display:flex;gap:10px'>
 
-<div style='display:flex;gap:10px'>
-<div class='input-group'>
-        <label for='chart-exec-cargs'>Interpreter arguments</label>
-        <input type='text' id='chart-exec-cargs'>
-</div>
+        <!-- name -->
+        <div class='input-group'>
+                <label for='name-{{id}}'>Stage Chart name</label>
+                <input type='text' id='name-{{id}}' value='{{name}}'>
+        </div>
 
-<div class='input-group'>
-        <label for='chart-exec-args'>Program arguments</label>
-        <input type='text' id='chart-exec-args'>
-</div>
-</div>
+        <!-- type -->
+        <div class='input-group'>
+            Chart Type: EXECUTOR
+        </div>
 
-<div class='input-group'>
-        <label for='chart-exec-script'>Script</label>
-        <textarea id='chart-exec-script'
-        class='code-editor'
-        placeholder="Write your code here..."
-        spellcheck="false"></textarea>
-</div>
+        </div>
+        
+        <!-- executor specifics -->
+        <div style='display:flex;gap:10px'>
+        <div class='input-group'>
+                <label for='extype-{{id}}'>Exec type</label>
+                <select id='extype-{{id}}' type='text'>
+                        <option value='script'>Script</option>
+                        <option value='queue'>Queue submission</option>
+                        <option value='mpi'>MPI program</option>
+                </select>
+        </div>
 
+        <div class='input-group'>
+                <label for='path-{{id}}'>Interpreter</label>
+                <input type='text' id='path-{{id}}'>
+        </div>
+        </div>
+
+        <div style='display:flex;gap:10px'>
+        <div class='input-group'>
+                <label for='cargs-{{id}}'>Interpreter arguments</label>
+                <input type='text' id='cargs-{{id}}'>
+        </div>
+
+        <div class='input-group'>
+                <label for='args-{{id}}'>Program arguments</label>
+                <input type='text' id='args-{{id}}'>
+        </div>
+        </div>
+
+        <div class='input-group'>
+                <label for='scr-{{id}}'>Script</label>
+                <textarea id='scr-{{id}}'
+                class='code-editor'
+                placeholder="Write your code here..."
+                spellcheck="false"></textarea>
+        </div>
+
+        <div>
+                <input type='checkbox' id='bypass-{{id}}' {{bypass}}>
+                <label for='bypass-{{id}}'>bypass</label>
+        </div>
+</div>

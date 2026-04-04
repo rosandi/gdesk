@@ -1,0 +1,30 @@
+<div class='infotext'>Create New Chart</div>
+<div class='control-group'>
+        <button id='create-new-chart'>create</button>
+</div>
+
+<div class='project_editcard'>
+        <div style='display:flex;gap:10px'>
+
+        <!-- name -->
+        <div class='input-group'>
+                <label for='new-chart-name'>Stage Chart name</label>
+                <input type='text' id='new-chart-name' {{name}}>
+        </div>
+
+        <!-- type -->
+        <div class='input-group'>
+                <label for='new-chart-type'>Chart type</label>
+                <select id='new-chart-type' type='text'>
+                        <option value='provider'>Provider</option>
+                        <option value='executor'>Executor</option>
+                        <option value='validator'>Validator</option>
+                        <option value='analyst'>Analyst</option>
+                </select>
+        </div>
+
+        </div>
+        
+        <!-- maybe needed -->
+        <div id='form'></div>
+</div>
