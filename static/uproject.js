@@ -283,6 +283,16 @@ class Chart {
         this.chart_typeform()
         this.bind_chart_form()
     }
+    
+    exec() {
+        if (c.name=='noname') return
+        console.log('execute:', this.id)
+        this.container.save()
+        getJSON("/runchart?p="+this.container.filename+"&c="+this.id, (out)=>{
+            // output from execution
+            console.log(out)
+        })
+    }
 
     /***** --> LINK CHARTS
      * 1. chart-id exists in io/out ==> remove link, remove line element
