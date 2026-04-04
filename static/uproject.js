@@ -64,6 +64,7 @@ class Chart {
         let jdat={
             name:this.name,
             id:this.id,
+            type:this.type,
             coord: this.coord,
             bypass:this.bypass,
             status:this.status,
@@ -181,11 +182,56 @@ class Chart {
         })
         typefield.addEventListener('change', (e)=>{
             this.type=typefield.value
-            settext('form-'+this.id, text_replace(htpage[this.type], {id:this.id}))
+            this.chart_typeform()
         })
         bypsfield.addEventListener('change', (e)=>{this.bypass=bypsfield.checked})
         getelm('rm-'+this.id).addEventListener('click', (e)=>{manager.remove(this.id)})
         getelm('accept-'+this.id).onclick=()=>{this.accept_form();hideModal();}
+    }
+    
+    chart_typeform(){
+        if(this.type=='') return
+        settext('form-'+this.id, text_replace(htpage[this.type], {id:this.id}))
+        setval('type-'+this.id, this.type)
+        
+        // --> chart type specifics
+        if(this.type == 'provider') {
+            let execution={script:''}
+            Object.assign(execution, this.execution)
+            setval('scr-'+this.id, execution['script'])
+            
+            getelm('file-browser').onclick=(e)=>{
+                collector=()=>{
+                    setval('scr-'+this.id, accumulator)
+                    setval('type-'+this.id, this.type)
+                    this.bind_chart_form()
+                }
+                update_filebrowser('.')
+            }
+        }
+
+        else if(this.type == 'executor') {
+            let execution={type:'',script:'',path:'',cargs:'',args:''}
+            Object.assign(execution, this.execution)
+
+            setval('exectype-'+this.id, xecution['type'])
+            setval('scr-'+this.id, execution['script'])
+            setval('path-'+this.id, execution['path'])
+            setval('cargs-'+this.id, execution['cargs'])
+            setval('args-'+this.id, execution['args'])
+            //FIXME: input/output file
+        }
+
+        else if(this.type == 'validator') {
+            //setval('chart-valid-type', execution['type'])
+           // setval('chart-valid-script', execution['type'])
+
+            //FIXME: validation criteria
+        }
+        else if(this.type == 'analyst') {
+           // setval('chart-anal-script', c.execution['script'])
+          // FIXME: more functions here!
+        }        
     }
 
     accept_form() { // record form: warning some are automatic
@@ -193,29 +239,29 @@ class Chart {
         let execution={}
 
         if(this.type == 'executor') {
-            execution['type']=getval('chart-exec-type')
-            execution['script']=getval('chart-exec-script')
-            execution['path']=getval('chart-exec-path')
-            execution['cargs']=getval('chart-exec-cargs')
-            execution['args']=getval('chart-exec-args')
+            execution['script']=getval('scr-'+this.id)
+            execution['path']=getval('path-'+this.id)
+            execution['cargs']=getval('cargs-'+this.id)
+            execution['args']=getval('args-'+this.id)
             //FIXME: input/output file
         }
 
         else if(this.type == 'validator') {
-            execution['type']=getval('chart-valid-type')
-            execution['script']=getval('chart-valid-script')
+            execution['script']=getval('scr-'+this.id)
 
             //FIXME: validation criteria
         }
+        
         else if(this.type == 'provider') {
             // notype but actions
-            execution['script']=getval('chart-prov-script')
+            execution['script']=getval('scr-'+this.id)
         }
         else if(this.type == 'analyst') {
-            execution['script']=getval('chart-anal-script')      
+            execution['script']=getval('scr-'+this.id)      
             // FIXME: more functions here!
         }
         
+        console.log('accept-form',execution)
         this.execution=execution
 
     }
@@ -224,7 +270,7 @@ class Chart {
         console.log('editing')
         let rpl={
             id: this.id,
-            act: [this.bypass, "checked", ""],
+            bypass: [this.bypass, "checked", ""],
             name: [
                 this.name=='noname',
                 "placeholder='Enter chart name'",
@@ -233,6 +279,8 @@ class Chart {
         }
         let ss=text_replace(htpage['editchart'],rpl)         
         showModal(ss)
+        
+        this.chart_typeform()
         this.bind_chart_form()
     }
 

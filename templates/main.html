@@ -34,8 +34,9 @@ HPC site content
 
 {% block userscript %}
 {% if session['username'] %}
-<script src='{{ url_for('static', filename='userpage.js') }}'></script>
-<script src='{{ url_for('static', filename='uproject.js') }}'></script>
+<script src="{{ url_for('static', filename='userpage.js') }}"></script>
+<script src="{{ url_for('static', filename='filebrowser.js') }}"></script>
+<script src="{{ url_for('static', filename='uproject.js') }}"></script>
 {% endif %}
 {% endblock %}
 
