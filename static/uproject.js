@@ -37,8 +37,8 @@ class Chart {
     drawn=false
     tailform=''
     dragging=false
-    requires=[]
-    provides=[]
+    requires=[] // -> object: {provider-id: [file, ...]
+    provides=[] // -> file name: [file, ...] 
     
     constructor(container,type,box_content,form_content='') {
         /* 
@@ -222,6 +222,7 @@ class Chart {
         bypsfield.addEventListener('change', (e)=>{this.bypass=bypsfield.checked})
         getelm('rm-'+this.id).addEventListener('click', (e)=>{this.container.remove(this.id)})
         getelm('accept-'+this.id).onclick=()=>{this.accept_form();hideModal();}
+        getelm('edit-link-'+this.id).onclick=()=>{this.edit_link()}
     }
     
     chart_typeform(){
@@ -250,6 +251,7 @@ class Chart {
         this.bind_chart_form()
     }
     
+
     // -> take data from form: must be reimplemented in child class
     accept_form() {}
 
@@ -302,13 +304,15 @@ class Chart {
     
     link_reqs(fro,to, ac, bc) {
         console.log(`create link: ${fro} --> ${to}`)
-        showModal(htpage['linkreqs'])
+        
+        showModal(text_replace(htpage['linkreqs'], {fro:fro,to:to}))
         let addid=0
         const ptable=document.createElement('table')
         const phead=document.createElement('thead')
         const pbody=document.createElement('tbody')
+        ptable.id='link-reqs-table'
         
-        phead.innerHTML='<tr><th colspan="2">Available files</th><th>as</th></tr>'
+        phead.innerHTML='<tr><th colspan="2">Available files</th><th>as input</th></tr>'
         ptable.appendChild(phead)
         
         getJSON('/inout?p='+this.container.filename+'&c='+fro, (d)=>{
@@ -318,7 +322,7 @@ class Chart {
             let rowtext=data.split('\n')
             rowtext.forEach((outfile) => {
                 let row=document.createElement('tr')
-                let ss=`<td>${outfile}</td><td><input type='checkbox' id='${outfile}'></td>`
+                let ss=`<td>${outfile}</td><td><input type='checkbox'></td>`
                 ss+=`<td><input type='text' value='${outfile}'></td>`
                 row.innerHTML=ss
                 pbody.appendChild(row)
@@ -329,7 +333,7 @@ class Chart {
             bc.inlinks.push(fro)
         })
         
-        getelm('add-required-file').addEventListener('click', ()=>{
+        getelm('add-provided-file').addEventListener('click', ()=>{
             let row=document.createElement('tr')
             let ss=`<td colspan='3'>`
             ss+=`<input type='text' 
@@ -347,6 +351,7 @@ class Chart {
         })
         
         getelm('confirm-link').addEventListener('click', ()=>{
+            this.link_assign(fro,to)
             this.prepare_arrows(fro,to)
             this.update_connector()
             hideModal()
@@ -354,7 +359,98 @@ class Chart {
         
         getelm('cancel-link').addEventListener('click', ()=>{hideModal()})
     }
-
+    
+    link_assign(fro,to) {
+        const prov=this.container.find_chart_by_id(fro).provides
+        const reqs=this.container.find_chart_by_id(to).requires
+        const rows=getelm('link-reqs-table').rows
+        let reqfiles=[]
+        let reqsobj={}
+        
+        for (let i=1;i<rows.length;i++) {
+            let check=rows[i].querySelector('input')
+            if(check) {
+                if (!check.checked) continue
+                let reqfile=rows[i].cells[0].innerText
+                if(!prov.includes(reqfile)) prov.push(reqfile)
+                reqfiles.push(reqfile)
+            } else {
+                let reqfile=rows[i].cells[0].innerText
+                if (reqfile='') continue                
+                if(!prov.includes(reqfile)) prov.push(reqfile)
+                reqfiles.push(reqfile)
+            }
+        }
+        
+        reqsobj[fro]=reqfiles
+        reqs.push(reqsobj)
+        console.log(prov)
+        console.log(reqs)
+        
+    }
+    
+    //-> edit requires and provides    
+    edit_link() {
+        // FIXME!
+        
+        showModal(text_replace(htpage['editlink'],{id:this.id}))
+        const table=getelm('file-requires')
+        this.requires.forEach((d)=>{
+            for(let fro in d) {
+                let infl=d[fro]
+                console.log(infl)
+                infl.forEach((fl)=>{
+                    let tr=document.createElement('tr')
+                    tr.innerHTML='<td>'+fro+':'+fl+'</td><td>remove</td>'
+                    table.appendChild(tr)
+                })
+            }
+        })
+ 
+        const ptable=getelm('file-provides')
+        this.provides.forEach((d)=>{
+            let tr=document.createElement('tr')
+            tr.innerHTML='<td>'+d+'</td><td>remove</td>'
+            ptable.appendChild(tr)
+        })
+        
+        let radd=0
+        let padd=0
+        getelm('add-required-file').addEventListener('click', ()=>{
+            let row=document.createElement('tr')
+            let ss=`<td colspan='2'>`
+            ss+=`<input type='text' 
+            style='
+            width:100%;
+            box-sizing:border-box;
+            text-align: center;
+            border:none;
+            outline:none' 
+            id='reqs-add-field-${radd}'
+            placeholder='all -> any files'></td>`
+            row.innerHTML=ss
+            table.appendChild(row)
+            radd++
+        })
+        
+        getelm('add-provided-file').addEventListener('click', ()=>{
+            let row=document.createElement('tr')
+            let ss=`<td colspan='2'>`
+            ss+=`<input type='text' 
+            style='
+            width:100%;
+            box-sizing:border-box;
+            text-align: center;
+            border:none;
+            outline:none' 
+            id='reqs-add-field-${padd}'
+            placeholder='all -> any files'></td>`
+            row.innerHTML=ss
+            ptable.appendChild(row)
+            padd++
+        })
+    }
+    
     prepare_arrows(fro, to) { // fro&to: id FIXME! use div for arrow defs
         let arid='conn'+fro+to
         let ss="<svg class='chart-connector'>"
@@ -1056,7 +1152,8 @@ async function get_subpages() {
         provider:  '/subpage?p=chart-provider',
         analyst:   '/subpage?p=chart-analyst',
         arrow:     '/subpage?p=arrow',
-        linkreqs:  '/subpage?p=link-requires'
+        linkreqs:  '/subpage?p=link-requires',
+        editlink:  '/subpage?p=edit-link'
     }
 
     let pages=Object.entries(subpages)
