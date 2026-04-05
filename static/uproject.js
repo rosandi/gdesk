@@ -1,11 +1,26 @@
-/****************
- * div used: userspace
+/* **********************************************
+ * HPC Work Desktop
+ * 
+ * (c) 2026, Rosandi: Guriang-HPC 
+ * https://www.guriang.net
+ * 
+ * -> Manage jobs
+ * -> Workflow designer
+ * -> Job status monitoring
+ * -> Simulation Result Analysis
+ * 
  */
 
-var chart_dirty=true
-var chart_width=120
-var stor=[]
+/* ==> this object stores all sub-pages: assigned <- onload */
 var htpage={}
+var pman  // The project manager 
+
+/*--------------------------*
+ * Chart Base Class
+ * 
+ * div used: this.area -> userspace
+ * 
+ */
 
 class Chart {
     name_= "noname"
@@ -18,9 +33,12 @@ class Chart {
     outlinks=[]
     execution={}
     status=true 
+    message=''
     drawn=false
     tailform=''
     dragging=false
+    requires=[]
+    provides=[]
     
     constructor(container,type,box_content,form_content='') {
         /* 
@@ -72,6 +90,8 @@ class Chart {
             status:this.status,
             inlinks:this.inlinks,
             outlinks:this.outlinks,
+            requires:this.requires,
+            provides:this.provides,
             execution:this.execution
         }
         return jdat
@@ -182,6 +202,14 @@ class Chart {
         }
     }
     
+    /* *** *** ***
+     * => Binds basic control elements
+     * -> name field: onblur (out-focus)
+     * -> bypass checkbox
+     * -> rm-(id): remove
+     * -> accept-(id): values accumulation
+    */
+    
     bind_chart_form() { // must be called from manager
         const namefield=getelm('name-'+this.id)
         const bypsfield=getelm('bypass-'+this.id)
@@ -200,50 +228,9 @@ class Chart {
         if(this.type=='') return
         settext('form-'+this.id, text_replace(htpage[this.type], {id:this.id}))
         setval('type-'+this.id, this.type)
-        
-        // --> chart type specifics
-        if(this.type == 'provider') {
-            let execution={script:''}
-            Object.assign(execution, this.execution)
-            setval('scr-'+this.id, execution['script'])
-            
-            getelm('file-browser').onclick=(e)=>{
-                collector=()=>{
-                    setval('scr-'+this.id, accumulator)
-                    setval('type-'+this.id, this.type)
-                    this.bind_chart_form()
-                }
-                update_filebrowser('.')
-            }
-        }
-
-        else if(this.type == 'executor') {
-            let execution={type:'',script:'',path:'',cargs:'',args:''}
-            Object.assign(execution, this.execution)
-
-            setval('exectype-'+this.id, xecution['type'])
-            setval('scr-'+this.id, execution['script'])
-            setval('path-'+this.id, execution['path'])
-            setval('cargs-'+this.id, execution['cargs'])
-            setval('args-'+this.id, execution['args'])
-            //FIXME: input/output file
-        }
-
-        else if(this.type == 'validator') {
-            //setval('chart-valid-type', execution['type'])
-           // setval('chart-valid-script', execution['type'])
-
-            //FIXME: validation criteria
-        }
-        else if(this.type == 'analyst') {
-           // setval('chart-anal-script', c.execution['script'])
-          // FIXME: more functions here!
-        }        
     }
 
-    accept_form() {}
-
-/**** --> fixme: replace! */
+    /**** --> fixme: replace! */
 
     edit() {
         console.log('editing', this)
@@ -263,6 +250,9 @@ class Chart {
         this.bind_chart_form()
     }
     
+    // -> take data from form: must be reimplemented in child class
+    accept_form() {}
+
     exec() {
         if (this.name=='noname') return
         console.log('execute:', this.id)
@@ -301,11 +291,7 @@ class Chart {
             getelm("conn"+to+fro+"-2").remove()
 
         } else {
-            console.log(`create link: ${fro} --> ${to}`)
-            ac.outlinks.push(to)
-            bc.inlinks.push(fro)
-            this.prepare_arrows(fro,to)
-            this.update_connector()
+            this.link_reqs(fro,to, ac, bc)
         }
         
         getelm(fro).classList.remove('highlight')
@@ -314,6 +300,61 @@ class Chart {
 
     }
     
+    link_reqs(fro,to, ac, bc) {
+        console.log(`create link: ${fro} --> ${to}`)
+        showModal(htpage['linkreqs'])
+        let addid=0
+        const ptable=document.createElement('table')
+        const phead=document.createElement('thead')
+        const pbody=document.createElement('tbody')
+        
+        phead.innerHTML='<tr><th colspan="2">Available files</th><th>as</th></tr>'
+        ptable.appendChild(phead)
+        
+        getJSON('/inout?p='+this.container.filename+'&c='+fro, (d)=>{
+            console.log(d)
+            let data=d.out.trim()
+            
+            let rowtext=data.split('\n')
+            rowtext.forEach((outfile) => {
+                let row=document.createElement('tr')
+                let ss=`<td>${outfile}</td><td><input type='checkbox' id='${outfile}'></td>`
+                ss+=`<td><input type='text' value='${outfile}'></td>`
+                row.innerHTML=ss
+                pbody.appendChild(row)
+            })
+            ptable.appendChild(pbody)
+            getelm('files-provided').appendChild(ptable)
+            ac.outlinks.push(to)
+            bc.inlinks.push(fro)
+        })
+        
+        getelm('add-required-file').addEventListener('click', ()=>{
+            let row=document.createElement('tr')
+            let ss=`<td colspan='3'>`
+            ss+=`<input type='text' 
+            style='
+            width:100%;
+            box-sizing:border-box;
+            text-align: center;
+            border:none;
+            outline:none' 
+            id='reqs-add-field-${addid}'
+            placeholder='all -> any files'></td>`
+            row.innerHTML=ss
+            pbody.appendChild(row)
+            addid++
+        })
+        
+        getelm('confirm-link').addEventListener('click', ()=>{
+            this.prepare_arrows(fro,to)
+            this.update_connector()
+            hideModal()
+        })
+        
+        getelm('cancel-link').addEventListener('click', ()=>{hideModal()})
+    }
+
     prepare_arrows(fro, to) { // fro&to: id FIXME! use div for arrow defs
         let arid='conn'+fro+to
         let ss="<svg class='chart-connector'>"
@@ -417,6 +458,10 @@ class Chart {
 } 
 // <-- class Chart
 
+/*-----------------------*
+ * Provider Chart 
+ *-----------------------*/
+
 class ProviderChart extends Chart {
     constructor(container) {
         super(container, 'provider', htpage['chartbox'])
@@ -443,6 +488,10 @@ class ProviderChart extends Chart {
     }
 
 }
+
+/*-----------------------*
+ * Executor Chart 
+ *-----------------------*/
 
 class ExecutorChart extends Chart {
     constructor(container) {
@@ -473,6 +522,7 @@ class ExecutorChart extends Chart {
             setval('queue-partition', execution['partition'])
             setval('queue-node-number', execution['numnode'])
             setval('queue-proc-number', execution['numproc'])
+            setval('queue-task-number', execution['numtask'])
         }
         else if(execution.type='mpi') {
             Object.assign(execution, this.execution)
@@ -511,6 +561,11 @@ class ExecutorChart extends Chart {
             execution['partition']=getval('queue-partition')
             execution['numnode']=getval('queue-node-number')
             execution['numproc']=getval('queue-proc-number')
+            execution['numtask']=getval('queue-task-number')
+            
+            if(execution['numnode']=='') execution['numnode']='1'
+            if(execution['numproc']=='') execution['numproc']='1'
+            if(execution['numtask']=='') execution['numtask']='1'
         }
         else if(etype=='mpi') {
             execution['numproc']=getval('mpi-proc-number')
@@ -523,6 +578,10 @@ class ExecutorChart extends Chart {
     }
     
 }
+
+/*-----------------------*
+ * Validator Chart 
+ *-----------------------*/
 
 class ValidatorChart extends Chart {
     constructor(container) {
@@ -539,6 +598,10 @@ class ValidatorChart extends Chart {
         this.execution['script']=getval('scr-'+this.id)
     }
 }
+
+/*-----------------------*
+ * Analyst Chart 
+ *-----------------------*/
 
 class AnalystChart extends Chart {
     constructor(container) {
@@ -560,6 +623,9 @@ class AnalystChart extends Chart {
 
 /********************************************
  * => This class keeps and manages charts
+ * 
+ * DOM area -> designer.arena
+ * 
  */
  
 class ChartContainer {
@@ -568,10 +634,10 @@ class ChartContainer {
     dirty=true
     linkto=null
     
-    constructor(_area, _pfname) {
-        this.area=_area
-        this.filename=_pfname // fixme: filename --> rearrange! ghpc-XXXXX.json
-        this.name=_pfname.replace('ghpc-','').replace('.json','')
+    constructor(area, pfname) {
+        this.area=area
+        this.filename=pfname 
+        this.name=pfname.replace('ghpc-','').replace('.json','')
     }
     
     add_chart(name, type) { //accept json data
@@ -593,10 +659,12 @@ class ChartContainer {
             c=new AnalystChart(this)
             c.name = name
         }
-        
+
         if(c) {
+            fetch('/newc?c='+c.id+'&p='+this.filename)
             this.charts.push(c)
             this.draw_charts()
+            this.dirty=true
         }
     }
 
@@ -693,10 +761,11 @@ class ChartContainer {
     }
     
 }
-/* <-- Chart Container */
+/* <-- Chart Container  */
 
     
-/***********************************************
+/*
+ **********************************************************
  * => This class controls the chart container
  * 
  * properties:
@@ -736,6 +805,7 @@ class ChartDesigner {
         this.bucket.load()
         getelm('btn-add-chart').addEventListener('click', ()=>{this.new_chart_form()})
         getelm('btn-save-charts').addEventListener('click', ()=>{this.bucket.save()})
+        getelm('btn-project-list').addEventListener('click', ()=>{pman.list()})
         settext('arrow-collection','')
     }
     
@@ -752,6 +822,21 @@ class ChartDesigner {
         }
     }
 }
+
+/*********************************
+ * Project Manager 
+ * 
+ * => This class manage user projects
+ * -> creation
+ * -> list
+ * -> edition
+ * -> deletion
+ * 
+ * Project identity (name)--> filename: ghpc-datehash.json
+ * 
+ * DOM-id used: this.area -> ptable @userspace
+ * 
+ */
 
 class ProjectManager {
     projects=[]
@@ -820,7 +905,7 @@ class ProjectManager {
     }
 
     /***
-     * used form: projectform
+     * used form: project form
      */
 
     create_new_project() {
@@ -848,7 +933,7 @@ class ProjectManager {
     }
 
     /***
-     * to remove project
+     * to remove project:
      * -> check from list
      * -> remove
      */
@@ -950,7 +1035,8 @@ class ProjectManager {
             this.bind_events()
         })
     }
-}
+} 
+/* <-- ProjectManager */
 
 /*****-->
  * These functions are called on entry and leave
@@ -969,7 +1055,8 @@ async function get_subpages() {
         validator: '/subpage?p=chart-validator',
         provider:  '/subpage?p=chart-provider',
         analyst:   '/subpage?p=chart-analyst',
-        arrow:     '/subpage?p=arrow'
+        arrow:     '/subpage?p=arrow',
+        linkreqs:  '/subpage?p=link-requires'
     }
 
     let pages=Object.entries(subpages)
@@ -983,7 +1070,7 @@ async function get_subpages() {
 }
 
 /******-->
- * Boot strap of the tab
+ * Bootstrap of the tab
  */
 
 async function projectEnter() {

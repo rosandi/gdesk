@@ -26,7 +26,7 @@
     <!-- executor specifics -->
     <!-- exec-type: script -->
     <div id='exec-type-script' style='display:none'>
-        <div style='display:flex;gap:10px'>
+        <div style='display:grid;grid-template-columns:1fr 1fr;gap:10px'>
             <div class='input-group'>
                 <label for='path-{{id}}'>Interpreter</label>
                 <select id='path-{{id}}' value='bash'>
@@ -40,63 +40,110 @@
                 <label for='cargs-{{id}}'>Interpreter arguments</label>
                 <input type='text' id='cargs-{{id}}' placeholder='interpreter arguments'>
             </div>
-        </div>
         
-        <div style='display:flex;gap:10px'>
-            <div class='input-group'>
-                <label for='args-{{id}}'>Program arguments</label>
-                <input type='text' id='args-{{id}}' style='width:50%' placeholder='program arguments'>
+            <div style='display:flex;gap:10px'>
+                <div class='input-group'>
+                    <label for='args-{{id}}'>Program arguments</label>
+                    <input type='text' id='args-{{id}}' placeholder='program arguments'>
+                </div>
             </div>
         </div>
-
+        <!-- requires and provides -->
+        <div style='display:grid;grid-template-columns:1fr 1fr;gap:10px'>
+            <div class='input-group'>
+                <label for='script-requires'>Requires</label>
+                <textarea id='script-requires'
+                class='code-editor'
+                style='height:100px'
+                placeholder="newline separated"
+                spellcheck="false"></textarea>
+            </div>
+            <div class='input-group'>
+                <label for='script-provides'>Provides</label>
+                <textarea id='script-provides'
+                class='code-editor'
+                style='height:100px'
+                placeholder="newline separated"
+                spellcheck="false"></textarea>
+            </div>        
+        </div>
+        
         <div class='input-group'>
             <label for='scr-{{id}}'>Script</label>
             <textarea id='scr-{{id}}'
             class='code-editor'
-            placeholder="Write your script here..."
+            placeholder="Write your code here... Paths relative to project's working directory"
             spellcheck="false"></textarea>
         </div>
     </div>
 
     <!-- exec-type queue -->
     <div id='exec-type-queue' style='display:none'>
-        <div style='display:grid;grid-template-columns: 1fr 1fr;gap:10px;'>
-            <div class='input-group'>
-                <label for='queue-job-name'>Job Name</label>
-                <input type='text' id='queue-job-name' placeholder='enter job name'>
-            </div>
-
-            <div class='input-group'>
-                <label for='queue-partition'>Partition</label>
-                <select id='queue-partition' value='bash'>
-                    <option>default</option>
-                </select>
-            </div>
+        <div style='display:grid;grid-template-rows:1fr min-content;gap:10px'>
             
-            <div class='input-group'>
-                <label for='queue-node-list'>Nodes list</label>
-                <input type='text' id='queue-node-list' placeholder='comma separated'>
-            </div>
-            
-            <div class='input-group'>
-                <label for='queue-node-number'>Number of nodes</label>
-                <input type='number' id='queue-node-number' placeholder='1'>
-            </div>
+            <div style='display:grid;grid-template-columns: 1fr 1fr;gap:10px'>
+                <div class='input-group'>
+                    <label for='queue-job-name'>Job Name</label>
+                    <input type='text' id='queue-job-name' placeholder='enter job name'>
+                </div>
 
-            <div class='input-group'>
-                <label for='queue-proc-number'>Number of processor</label>
-                <input type='number' id='queue-proc-number' placeholder='4'>
-            </div>
+                <div class='input-group'>
+                    <label for='queue-partition'>Partition</label>
+                    <select id='queue-partition' value='bash'>
+                        <option>default</option>
+                    </select>
+                </div>
+                
+                <div class='input-group'>
+                    <label for='queue-node-list'>Nodes list</label>
+                    <input type='text' id='queue-node-list' placeholder='comma separated'>
+                </div>
+                
+                <div class='input-group'>
+                    <label for='queue-node-number'>Number of nodes</label>
+                    <input type='number' id='queue-node-number' placeholder='1'>
+                </div>
 
+                <div class='input-group'>
+                    <label for='queue-proc-number'>Number of processor</label>
+                    <input type='number' id='queue-proc-number' placeholder='4'>
+                </div>
+
+                <div class='input-group'>
+                    <label for='queue-task-number'>Task per processor</label>
+                    <input type='number' id='queue-task-number' placeholder='1'>
+                </div>
+
+            </div>
+            <!-- requires and provides -->
+            <div style='display:grid;grid-template-columns:1fr 1fr;gap:10px'>
+                <div class='input-group'>
+                    <label for='queue-requires'>Requires</label>
+                    <textarea id='queue-requires'
+                    class='code-editor'
+                    style='height:100px'
+                    placeholder="newline separated"
+                    spellcheck="false"></textarea>
+                </div>
+                <div class='input-group'>
+                    <label for='queue-provides'>Provides</label>
+                    <textarea id='queue-provides'
+                    class='code-editor'
+                    style='height:100px'
+                    placeholder="newline separated"
+                    spellcheck="false"></textarea>
+                </div>
+            </div>
         </div>
         
         <div class='input-group'>
             <label for='queue-script'>Program Script</label>
             <textarea id='queue-script'
             class='code-editor'
-            placeholder="Write your code here..."
+            placeholder="Script: Paths relative to charts' directory"
             spellcheck="false"></textarea>
         </div>
+        
     </div>
 
     <!-- exec-type MPI -->
@@ -123,6 +170,26 @@
                 <input type='text' id='mpi-program-args' placeholder='program arguments'>
             </div>
         </div>
+        <!-- requires and provides -->
+        <div style='display:grid;grid-template-columns:1fr 1fr;gap:10px'>
+            <div class='input-group'>
+                <label for='mpi-requires'>Requires</label>
+                <textarea id='mpi-requires'
+                class='code-editor'
+                style='height:100px'
+                placeholder="newline separated"
+                spellcheck="false"></textarea>
+            </div>
+            <div class='input-group'>
+                <label for='mpi-provides'>Provides</label>
+                <textarea id='mpi-provides'
+                class='code-editor'
+                style='height:100px'
+                placeholder="newline separated"
+                spellcheck="false"></textarea>
+            </div>        
+        </div>
+
     </div>
 
     <!-- bypass chart -->

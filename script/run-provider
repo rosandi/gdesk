@@ -11,7 +11,7 @@
 # git://url
 
 echo args: $@
-wdir="$1/in"
+wdir="$1/out"
 
 for line in $(cat $2); do
     service=$(echo $line|cut -d: -f1)
@@ -22,17 +22,17 @@ for line in $(cat $2); do
     
     case $service in
     copy)
-        echo copying file $target to in directory
+        echo copying file $target to out directory
 	cp $target $wdir/$(basename $target)
         ;;
 
     link)
-        echo link file $target to in directory
+        echo link file $target to out directory
 	ln -s $target $wdir/$(basename $target)
         ;;
 
     http|https)
-        echo download $target to in directory
+        echo download $target to out directory
 	wget $target -O $wdir/$(basename $target)
         ;;
 

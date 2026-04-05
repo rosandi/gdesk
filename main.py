@@ -473,12 +473,7 @@ def create_newproject(pdata):
         if pdata['name'].strip() == '': pdata['name']=pdata['wdir']
         ssh_savetext(json.dumps(pdata), project_filename)
         uinfo=json.loads(ssh_gettext(userconf+'/user.json'))
-
-        # 1. create directories
-        ssh(f'mkdir -p {uinfo['directory']}/{pdata['wdir']}/in')
-        ssh(f'mkdir -p {uinfo['directory']}/{pdata['wdir']}/out')
-        ssh(f'mkdir -p {uinfo['directory']}/{pdata['wdir']}/scr')
-        ssh(f'mkdir -p {uinfo['directory']}/{pdata['wdir']}/tmp')
+        ssh(f'mkdir -p {uinfo['directory']}/{pdata['wdir']}')
 
     except Exception as e:
         print('error: project not created')
@@ -523,6 +518,7 @@ def project():
     if prj: # prj is project-file-name (under usercfg)
         charts=request.get_json()
         p=project_chart_filename(prj)
+        print(f'path={p}')
         ssh_savetext(json.dumps(charts), p)
         return apiok('project charts saved')
 
@@ -533,6 +529,21 @@ def project():
         return apiok(f'removed:{flst}')
 
     return apierr('wrong api: project');
+
+@app.route('/newc')
+@api_login_required
+def newchart():
+    c=request.args.get('c')
+    p=request.args.get('p')
+    # create project chart directory
+    wdir=project_wdir(p)
+    wdir=f'{wdir}/{c}'
+    print(f'creating new chart:{c}') 
+    ssh(f'mkdir -p {wdir}/in')
+    ssh(f'mkdir -p {wdir}/out')
+    ssh(f'mkdir -p {wdir}/scr')
+    ssh(f'mkdir -p {wdir}/tmp')
+    return apiok(f'chart {c} directory created')
 
 ###################################################
 # --> Chart executions API <--
@@ -549,22 +560,24 @@ def run_provider(c, p):
     #    make links to wdir/in
     #
     # always cleanup!
-    # returns file list @in directory
+    #  files are stored under out directory (provides)
     #
     
-    wdir=project_wdir(p)
     sout=''
     serr=''
     inlst=''
     outlst=''
     print(f'running provider chart: {c['id']}')
-    tmpdir=f'tmp/{c['id']}'
+    
+    # --> under web-server directory
+    tmpdir=f'cache/{c['id']}'
+    wdir=project_wdir(p)+f'/{c['id']}'
     
     # --> copy cached files
     if os.path.exists(tmpdir):
         print('1. file transfer')
         for d in os.listdir(tmpdir):
-            ssh_putfile(f'{tmpdir}/{d}', f'{wdir}/in')
+            ssh_putfile(f'{tmpdir}/{d}', f'{wdir}/out')
             os.remove(f'{tmpdir}/{d}')
         os.rmdir(tmpdir)
 
@@ -572,7 +585,7 @@ def run_provider(c, p):
     print('2. download/copy/link/')
     
     scrprov=f'{userconf}/script/run-provider'  # the script
-    scrpath=f'{wdir}/tmp/{c['id']}.lst'     # templates from textarea
+    scrpath=f'{wdir}/tmp/{c['id']}.lst'        # template file from scr-id textarea
     ssh_savetext(c['execution']['script'], scrpath)
     
     try:
@@ -597,19 +610,66 @@ def run_provider(c, p):
 
 def run_executor(c, p):
     
-    wdir=project_wdir(p)
+    # --> chart's directory! (pdir/cid)
+    wdir=project_wdir(p)+f'/{c['id']}'
+    ex=c['execution']
     ty=c['execution']['type']
     sout=''
     serr=''
     
+    # scripts are executed based on 
+    # $1-> wdir 
+    # $2-> script
+    
     if ty == 'script':
-        runner=f'{wdir}/scr/run-bash'
-        scrpath=f'{wdir}/tmp/{c['id']}.sh'
+        #FIXME: sould be unblocking
+        if c['execution']['type'] == 'python':
+            runner=f'{userconf}/script/run-python'
+        elif c['execution']['type'] == 'python':
+            runner=f'{userconf}/script/run-awk'
+        else: # everything else-> bash
+            runner=f'{userconf}/script/run-bash'
+        
+        scrpath=f'{wdir}/scr/{c['id']}.sh'
         ssh_savetext(c['execution']['script'], scrpath)
         out=ssh_raw(f'{runner} {wdir} {scrpath} {c['execution']['args']}')
         sout=out.stdout
         serr=out.stderr
     
+    if ty == 'mpi':
+        # cmd: nohup mpirun -np numproc program > outdir/output.log
+        txt="#!/bin/bash\n"
+        txt+=f'cd {wdir}\n'
+        txt+=f'mpirun -np {ex["numproc"]} {ex["cargs"]} {ex["path"]} {ex["args"]} '
+        txt+=f'> {wdir}/out/output.log 2>&1\n'
+        ssh_savetext(txt, f'{wdir}/scr/execute-mpi.sh')
+        out=ssh_raw(f'bash {wdir}/scr/execute-mpi.sh')
+        sout=out.stdout
+        serr=out.stderr
+
+    if ty == 'queue':
+        # cmd: sbatch script
+        with open(f'{userconf}/user.json') as jfl:
+            udat=json.load(jfl)
+        
+        if udat['email'].find('@'):            
+            with open(f'{userconf}/script/queue-batch-common.sh') as bfl:
+                txt=bfl.read()
+                txt=txt.replace('{{jobname}}', ex['jobname'])
+                txt=txt.replace('{{partition}}', ex['partition'])
+                txt=txt.replace('{{nnode}}', ex['numnode'])
+                txt=txt.replace('{{nproc}}', ex['numproc'])
+                txt=txt.replace('{{ntask}}', ex['numtask'])
+                txt=txt.replace('{{mail}}', udat['email'])
+                txt+=f'cd {wdir}\n{ex["script"]}\n'
+                ssh_savetext(txt, f'{wdir}/scr/submit.sh')
+                out=ssh_raw(f'sbatch {wdir}/scr/submit.sh')
+                sout=out.stdout
+                serr=out.stderr
+
+        else:
+            serr='email address must be set in user-info'
+        
     inlst=ssh(f'ls -1 {wdir}/in')
     outlst=ssh(f'ls -1 {wdir}/out')
     return {
@@ -631,8 +691,8 @@ def execute_chart(p,cid):
     #  p   -> project info file
     #  cid -> chart id
     
-    wdir=project_wdir(p)
-    charts=json.loads(ssh_gettext(f'{wdir}/project.json'))
+    pdir=project_wdir(p) # project directory
+    charts=json.loads(ssh_gettext(f'{pdir}/project.json'))
     thechart=None
     print(f'execute: {p} {cid}')
     
@@ -678,10 +738,11 @@ def cache_file():
     # template dir name format: chart-id
 
     cid=request.args.get('c')
-    if not cid: 
-        return "chart-d required! no files uploaded"
     
-    tmpdir=cid
+    if not cid: 
+        return "chart-id required! no files uploaded"
+    
+    tmpdir=f'cache/{cid}'
     files = request.files.getlist('files[]')
 
     if not files or files[0].filename == '':
@@ -691,11 +752,29 @@ def cache_file():
     for file in files:
         if file:
             filename = secure_filename(file.filename)
-            os.makedirs(f'tmp/{tmpdir}', exist_ok=True)
-            file.save(f'tmp/{tmpdir}/{filename}')
+            os.makedirs(f'{tmpdir}', exist_ok=True)
+            file.save(f'{tmpdir}/{filename}')
             saved_count += 1
 
     return f"cached {saved_count} files!"
+
+# Get file list: cid/in cid/out
+
+@app.route('/inout')
+@api_login_required
+def getavailable_files():
+    c=request.args.get('c')
+    p=request.args.get('p')
+    # create project chart directory
+    wdir=project_wdir(p)
+    wdir=f'{wdir}/{c}'
+    
+    infiles=ssh(f'ls -1 {wdir}/in')
+    outfiles=ssh(f'ls -1 {wdir}/out')
+    
+    return jsonify({'in': infiles, 'out': outfiles})
+
+# -> misc 
 
 @app.route('/icons')
 def icons():
@@ -704,6 +783,7 @@ def icons():
         return send_file(f'icons/{ifile}.png', mimetype='image/png')
         
     return send_file(f'icons/unknown.png')
+    
     
 ############################################
 #  --> File Browser API <--
