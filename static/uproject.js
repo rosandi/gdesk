@@ -1172,7 +1172,7 @@ async function get_subpages() {
 
 async function projectEnter() {
     // use nesting div -> more flexible to apply style
-    let sdiv="<div id='ptable' class='card'></div>"
+    let sdiv="<div id='ptable' class='fullcard'></div>"
     await get_subpages()
     setText('userspace', sdiv)
     pman=new ProjectManager('ptable')
