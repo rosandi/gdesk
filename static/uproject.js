@@ -18,7 +18,7 @@ var pman  // The project manager
 /*--------------------------*
  * Chart Base Class
  * 
- * div used: this.area -> userspace
+ * div used: this.area -> Container.arena: check!
  * 
  */
 
@@ -37,8 +37,8 @@ class Chart {
     drawn=false
     tailform=''
     dragging=false
-    requires=[] // -> object: {provider-id: [file, ...]
-    provides=[] // -> file name: [file, ...] 
+    requires=[] // -> [file, ...]
+    provides=[] // -> [file, ...] 
     
     constructor(container,type,box_content,form_content='') {
         /* 
@@ -303,7 +303,6 @@ class Chart {
     }
     
     link_reqs(fro,to, ac, bc) {
-        console.log(`create link: ${fro} --> ${to}`)
         
         showModal(text_replace(htpage['linkreqs'], {fro:fro,to:to}))
         let addid=0
@@ -315,22 +314,30 @@ class Chart {
         phead.innerHTML='<tr><th colspan="2">Available files</th><th>as input</th></tr>'
         ptable.appendChild(phead)
         
+        
         getJSON('/inout?p='+this.container.filename+'&c='+fro, (d)=>{
-            console.log(d)
-            let data=d.out.trim()
-            
-            let rowtext=data.split('\n')
-            rowtext.forEach((outfile) => {
+            const frochart=this.container.find_chart_by_id(fro)
+            frochart.provides.forEach((pro) =>{
                 let row=document.createElement('tr')
-                let ss=`<td>${outfile}</td><td><input type='checkbox'></td>`
-                ss+=`<td><input type='text' value='${outfile}'></td>`
+                let ss=`<td>${pro}</td><td><input type='checkbox'></td>`
+                ss+=`<td><input type='text' value='${pro}'></td>`
                 row.innerHTML=ss
                 pbody.appendChild(row)
             })
+    
+            let data=d.out.trim()
+            if(data!='') {
+                let rowtext=data.split('\n')
+                rowtext.forEach((outfile) => {
+                    let row=document.createElement('tr')
+                    let ss=`<td>${outfile}</td><td><input type='checkbox'></td>`
+                    ss+=`<td><input type='text' value='${outfile}'></td>`
+                    row.innerHTML=ss
+                    pbody.appendChild(row)
+                })
+            }
             ptable.appendChild(pbody)
             getelm('files-provided').appendChild(ptable)
-            ac.outlinks.push(to)
-            bc.inlinks.push(fro)
         })
         
         getelm('add-provided-file').addEventListener('click', ()=>{
@@ -351,6 +358,9 @@ class Chart {
         })
         
         getelm('confirm-link').addEventListener('click', ()=>{
+            console.log(`create link: ${fro} --> ${to}`)
+            ac.outlinks.push(to)
+            bc.inlinks.push(fro)
             this.link_assign(fro,to)
             this.prepare_arrows(fro,to)
             this.update_connector()
@@ -364,8 +374,6 @@ class Chart {
         const prov=this.container.find_chart_by_id(fro).provides
         const reqs=this.container.find_chart_by_id(to).requires
         const rows=getelm('link-reqs-table').rows
-        let reqfiles=[]
-        let reqsobj={}
         
         for (let i=1;i<rows.length;i++) {
             let check=rows[i].querySelector('input')
@@ -373,20 +381,14 @@ class Chart {
                 if (!check.checked) continue
                 let reqfile=rows[i].cells[0].innerText
                 if(!prov.includes(reqfile)) prov.push(reqfile)
-                reqfiles.push(reqfile)
+                reqs.push(reqfile)
             } else {
                 let reqfile=rows[i].cells[0].innerText
                 if (reqfile='') continue                
                 if(!prov.includes(reqfile)) prov.push(reqfile)
-                reqfiles.push(reqfile)
+                reqs.push(reqfile)
             }
         }
-        
-        reqsobj[fro]=reqfiles
-        reqs.push(reqsobj)
-        console.log(prov)
-        console.log(reqs)
-        
     }
     
     //-> edit requires and provides    
@@ -396,21 +398,27 @@ class Chart {
         showModal(text_replace(htpage['editlink'],{id:this.id}))
         const table=getelm('file-requires')
         this.requires.forEach((d)=>{
-            for(let fro in d) {
-                let infl=d[fro]
-                console.log(infl)
-                infl.forEach((fl)=>{
-                    let tr=document.createElement('tr')
-                    tr.innerHTML='<td>'+fro+':'+fl+'</td><td>remove</td>'
-                    table.appendChild(tr)
-                })
-            }
+            let tr=document.createElement('tr')
+            let ss='<td>'+d+'</td>'
+            ss+=`<td><img 
+            src="/icons?icon=remove" 
+            width="16" height="16"
+            onclick='this.parentElement.parentElement.remove()'
+            ></td>`
+            tr.innerHTML=ss
+            table.appendChild(tr)
         })
  
         const ptable=getelm('file-provides')
         this.provides.forEach((d)=>{
             let tr=document.createElement('tr')
-            tr.innerHTML='<td>'+d+'</td><td>remove</td>'
+            let ss='<td>'+d+'</td>'
+            ss+=`<td><img 
+            src="/icons?icon=remove" 
+            width="16" height="16"
+            onclick='this.parentElement.parentElement.remove()'
+            ></td>`
+            tr.innerHTML=ss
             ptable.appendChild(tr)
         })
         
@@ -430,6 +438,7 @@ class Chart {
             placeholder='all -> any files'></td>`
             row.innerHTML=ss
             table.appendChild(row)
+            getelm(`reqs-add-field-${padd}`).focus()
             radd++
         })
         
@@ -443,11 +452,36 @@ class Chart {
             text-align: center;
             border:none;
             outline:none' 
-            id='reqs-add-field-${padd}'
+            id='prov-add-field-${padd}'
             placeholder='all -> any files'></td>`
             row.innerHTML=ss
             ptable.appendChild(row)
+            getelm(`prov-add-field-${padd}`).focus()
             padd++
+        })
+        
+        getelm('update-link-reqs-prov').addEventListener('click', ()=>{
+            // parse required&provides
+            let rows=getelm('file-requires').rows
+            this.requires=[]
+            for (let r=1;r<rows.length;r++) {
+                let rr=rows[r].innerText.trim()
+                if(rr=='') continue
+                this.requires.push(rr)
+            }
+            console.log(this.requires)
+            rows=getelm('file-provides').rows
+            this.provides=[]
+            for (let r=1;r<rows.length;r++) {
+                let ed=rows[r].querySelector('input')
+                var rr
+                if(ed) {rr=ed.value}
+                else {rr=rows[r].innerText.trim()}
+                if(rr=='') continue
+                this.provides.push(rr)
+            }
+            console.log(this.provides)
+            
         })
     }
     
@@ -919,7 +953,8 @@ class ChartDesigner {
     }
 }
 
-/*********************************
+/*
+ * ********************************
  * Project Manager 
  * 
  * => This class manage user projects

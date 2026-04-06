@@ -105,7 +105,7 @@
         flex-direction: column;
         justify-content: space-between;
         /*height: 500px;*/
-        background-color: #f5fdfd;
+        background-color: #fefefe;
         border-radius: 10px;
         overflow-x: hidden;
         overflow-y: hidden;
@@ -311,11 +311,12 @@
     flex-direction: row;
     gap: 10px;
     margin-top: 10px;
+    margin-bottom: 10px;
 }
 
 .control-group button {
     color: black;
-		height:2em;
+    height:2em;
     background-color: rgba(180,110,110,0.6);
     border-color: rgba(180,110,110,0.6);
     font-size: 14px;
@@ -393,7 +394,7 @@
         justify-content: flex-start;
 */
     padding:10px;
-    background-color: #f5fdfd;
+    background-color: #f0fdfd;
     border-radius: 10px;
 }
 
