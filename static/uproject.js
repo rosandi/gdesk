@@ -231,7 +231,7 @@ class Chart {
         setval('type-'+this.id, this.type)
     }
 
-    /**** --> fixme: replace! */
+    /**** >>--> fixme: replace! */
 
     edit() {
         console.log('editing', this)
@@ -293,6 +293,7 @@ class Chart {
             getelm("conn"+to+fro+"-2").remove()
 
         } else {
+            // add link only when not previously made
             this.link_reqs(fro,to, ac, bc)
         }
         
@@ -357,6 +358,7 @@ class Chart {
             addid++
         })
         
+        // -> confirm and make link!
         getelm('confirm-link').addEventListener('click', ()=>{
             console.log(`create link: ${fro} --> ${to}`)
             ac.outlinks.push(to)
@@ -370,6 +372,7 @@ class Chart {
         getelm('cancel-link').addEventListener('click', ()=>{hideModal()})
     }
     
+    // -> Do create link!
     link_assign(fro,to) {
         const prov=this.container.find_chart_by_id(fro).provides
         const reqs=this.container.find_chart_by_id(to).requires
@@ -377,12 +380,12 @@ class Chart {
         
         for (let i=1;i<rows.length;i++) {
             let check=rows[i].querySelector('input')
-            if(check) {
+            if(check) { // output file list
                 if (!check.checked) continue
                 let reqfile=rows[i].cells[0].innerText
                 if(!prov.includes(reqfile)) prov.push(reqfile)
                 reqs.push(reqfile)
-            } else {
+            } else { // additional requirements
                 let reqfile=rows[i].cells[0].innerText
                 if (reqfile='') continue                
                 if(!prov.includes(reqfile)) prov.push(reqfile)

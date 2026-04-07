@@ -382,7 +382,7 @@
 /* the area where chart boxes live */
 .project-area {
     position: relative;
-    width: 100vw;
+    /*width: 100vw;*/
     height: 100vh;
     overflow-x:auto;
     overflow-y:auto;
