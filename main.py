@@ -692,6 +692,7 @@ def execute_chart(p,cid):
     #  cid -> chart id
     
     pdir=project_wdir(p) # project directory
+    print('project directory:', pdir)
     charts=json.loads(ssh_gettext(f'{pdir}/project.json'))
     thechart=None
     print(f'execute: {p} {cid}')

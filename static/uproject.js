@@ -326,15 +326,17 @@ class Chart {
                 pbody.appendChild(row)
             })
     
-            let data=d.out.trim()
+            let data=d.out.trim() // from files
             if(data!='') {
                 let rowtext=data.split('\n')
                 rowtext.forEach((outfile) => {
-                    let row=document.createElement('tr')
-                    let ss=`<td>${outfile}</td><td><input type='checkbox'></td>`
-                    ss+=`<td><input type='text' value='${outfile}'></td>`
-                    row.innerHTML=ss
-                    pbody.appendChild(row)
+                    if (!frochart.provides.includes(outfile)) {
+                        let row=document.createElement('tr')
+                        let ss=`<td>${outfile}</td><td><input type='checkbox'></td>`
+                        ss+=`<td><input type='text' value='${outfile}'></td>`
+                        row.innerHTML=ss
+                        pbody.appendChild(row)
+                    }
                 })
             }
             ptable.appendChild(pbody)
